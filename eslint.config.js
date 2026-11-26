@@ -1,0 +1,17 @@
+import eslint from '@eslint/js';
+import hooks from 'eslint-plugin-react-hooks';
+import tseslint from 'typescript-eslint';
+
+export default [
+  { ignores: ['dist/**', 'coverage/**'] },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': hooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+    },
+  },
+];
