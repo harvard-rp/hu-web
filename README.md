@@ -1,6 +1,6 @@
 # Harvard University RP · Digital Campus
 
-`hu-web` is the static frontend for an independent Discord roleplay community. HU-006A is a public, French-language prototype with fictional people and activity. It is unaffiliated with Harvard University.
+`hu-web` is the static frontend for an independent Discord roleplay community. The Digital Campus is a public, French-language prototype with fictional people and activity. It is unaffiliated with Harvard University.
 
 ## Local development
 
@@ -36,6 +36,6 @@ After the architect approves the pull request, enable **GitHub Actions** as the 
 
 ## API foundation
 
-The HTTP client introduced in HU-006 remains available for later integration. Its optional public build settings are documented in `.env.example`. The HU-006A preview uses the standalone state and keeps all interactions independent of network configuration. Never put credentials into Vite environment variables.
+The HTTP client introduced in HU-006 remains available for later integration. Its optional public build settings are documented in `.env.example`. The public demo uses the standalone state and keeps all interactions independent of network configuration. Never put credentials into Vite environment variables.
 
 See [architecture](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [visual and catalogue sources](docs/DEMO_SOURCES.md), [decisions](docs/DECISIONS.md) and [roadmap](docs/ROADMAP.md).

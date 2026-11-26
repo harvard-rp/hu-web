@@ -23,3 +23,9 @@ Keep the public prototype in the existing SPA and reuse its primitive components
 ## HU-006A · Temporary project Pages build
 
 Use a specific Vite mode with base `/hu-web/` and a HashRouter so direct Pages share links work on a plain static host. The regular build keeps browser history routing. Push and manual Pages deployments are restricted to `main`. Job permissions separate source reads from artifact deployment. The CI job runs both build variants for review branches.
+
+## HU-006B · UI hierarchy and fixture provenance
+
+Keep the existing routes, in-memory interactions and static build modes. Use a neutral Instrument Sans workspace with a compact navigation shell and module-specific document structures. Put technical status in the footer. Keep the home photograph outside the campus dashboard.
+
+Use licensed local photography with attribution and original House monograms. Preserve known RP facts and visually separate sample club records from the incomplete server catalogue. Unknown House profiles show an explicit missing-data state. The [demo source register](DEMO_SOURCES.md) records the references and rights.

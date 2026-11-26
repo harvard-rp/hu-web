@@ -149,7 +149,7 @@ export function CharacterWizardPage() {
         : { major: '', majorProposal: '', academic: '' };
     submit({ ...draft, ...academicFields, name: draft.name.trim() });
     setSubmitted(true);
-    toast.success('Fiche fictive envoyée à la file de simulation');
+    toast.success('Fiche ajoutée à la file de validation');
   }
 
   function textField(
@@ -172,19 +172,17 @@ export function CharacterWizardPage() {
   return (
     <div className="demo-page">
       <DemoHeading
-        section="Vie étudiante"
-        title="Créer une fiche RP"
-        description="Écrivez uniquement au sujet d’un personnage fictif. La fiche reste dans cette session de démonstration."
+        title="Créer un personnage"
+        description="Décrivez un personnage fictif et omettez toute donnée personnelle. La fiche reste dans cette session."
       />
       {submitted ? (
         <section
           role="status"
           className="demo-panel demo-panel-copy demo-wizard-result"
         >
-          <h2>Fiche fictive soumise</h2>
-          <p>Retrouvez-la dans la file de validation simulée.</p>
+          <h2>Fiche soumise</h2>
           <Button asChild>
-            <Link to="/preview/staff">Ouvrir l’espace staff</Link>
+            <Link to="/preview/staff">Voir la file de validation</Link>
           </Button>
         </section>
       ) : (
@@ -195,7 +193,7 @@ export function CharacterWizardPage() {
                 key={label}
                 aria-current={index === step ? 'step' : undefined}
               >
-                <span>{index + 1}</span>
+                <span aria-hidden="true">{index + 1}</span>
                 {label}
               </li>
             ))}
@@ -255,10 +253,7 @@ export function CharacterWizardPage() {
               <div className="demo-form-grid">
                 {textField('personality', 'Présentation et personnalité')}
                 {textField('appearance', 'Description physique')}
-                {textField(
-                  'faceClaim',
-                  'Face claim (description fictive, sans photo ni lien)',
-                )}
+                {textField('faceClaim', 'Face claim (description uniquement)')}
               </div>
             )}
             {step === 2 && (
@@ -273,7 +268,7 @@ export function CharacterWizardPage() {
                           update('major', event.target.value)
                         }
                       >
-                        <option value="">Sélection facultative</option>
+                        <option value="">Choisir une filière</option>
                         {majors.map((major) => (
                           <option key={major}>{major}</option>
                         ))}
@@ -309,17 +304,16 @@ export function CharacterWizardPage() {
                         />
                       </Field>
                     )}
-                    {textField('academic', 'Parcours universitaire fictif')}
+                    {textField('academic', 'Parcours universitaire')}
                   </>
                 ) : (
-                  <p>
-                    Les informations universitaires sont facultatives pour ce
-                    type de profil dans le prototype.
+                  <p>Ce profil ne comporte pas de rubrique universitaire.</p>
+                )}
+                {draft.profile === 'student' && (
+                  <p className="demo-aside">
+                    Le staff attribue la House à la validation.
                   </p>
                 )}
-                <p className="demo-aside">
-                  La House est attribuée par le staff lors de la validation.
-                </p>
               </div>
             )}
             {step === 3 && (
@@ -342,9 +336,7 @@ export function CharacterWizardPage() {
                 </Button>
               )}
               <Button type="submit">
-                {step === steps.length - 1
-                  ? 'Soumettre la fiche fictive'
-                  : 'Suivant'}
+                {step === steps.length - 1 ? 'Soumettre ma fiche' : 'Suivant'}
               </Button>
             </div>
           </form>

@@ -1,9 +1,9 @@
-import { CalendarDays, Heart, MapPin, MessageCircle, Send } from 'lucide-react';
+import { ArrowRight, Heart, MapPin, MessageCircle, Send } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 
-import campusImage from '@/assets/campus-autumn.webp';
-import { Badge } from '@/components/ui/badge';
+import yardPhoto from '@/assets/harvard-yard.webp';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,13 +49,25 @@ function PostCard({ post }: { post: DemoPost }) {
       </div>
       <p className="post-text">{post.text}</p>
       {post.photo && (
-        <img
-          src={campusImage}
-          alt="Cour fictive sous les couleurs d’automne"
-          loading="lazy"
-          width={1260}
-          height={945}
-        />
+        <figure className="post-figure">
+          <img
+            src={yardPhoto}
+            alt="Allées de Harvard Yard en automne"
+            loading="lazy"
+            width={960}
+            height={600}
+          />
+          <figcaption>
+            <a href="https://commons.wikimedia.org/wiki/File:Harvard_yard.jpg">
+              Pundit, Wikimedia Commons
+            </a>
+            {' · '}
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/">
+              CC BY-SA 3.0
+            </a>
+            {' · Recadrée'}
+          </figcaption>
+        </figure>
       )}
       <div className="post-actions">
         <Button
@@ -113,44 +125,77 @@ function PostCard({ post }: { post: DemoPost }) {
 export function SocialPage() {
   const { posts, addPost } = useDemo();
   const [post, setPost] = useState('');
+  const authors = [...new Set(posts.map((item) => item.authorId))].filter(
+    (id) => id !== student.id,
+  );
   function publish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!post.trim()) return;
     addPost(post.trim());
     setPost('');
-    toast.success('Publication ajoutée à cette session fictive');
+    toast.success('Publication ajoutée');
   }
   return (
     <div className="demo-page">
-      <DemoHeading
-        section="Communauté"
-        title="Journal RP"
-        description="Le fil des personnages. Les publications, réactions et commentaires restent dans cette session fictive."
-      />
-      <div className="social-feed">
-        <form onSubmit={publish} className="demo-panel social-composer">
-          <div className="post-author">
-            <Avatar character={student} />
-            <strong>{student.name}</strong>
-          </div>
-          <div className="demo-field">
-            <Label htmlFor="new-post">Publication RP</Label>
-            <textarea
-              id="new-post"
-              rows={3}
-              maxLength={600}
-              value={post}
-              onChange={(event) => setPost(event.target.value)}
-              placeholder="Écrire en tant que Camille…"
-            />
-          </div>
-          <Button type="submit" disabled={!post.trim()}>
-            <Send aria-hidden="true" /> Publier dans la démo
-          </Button>
-        </form>
-        {posts.map((item) => (
-          <PostCard key={item.id} post={item} />
-        ))}
+      <DemoHeading title="Publications" />
+      <div className="social-layout">
+        <div className="social-feed">
+          <form onSubmit={publish} className="demo-panel social-composer">
+            <div className="post-author">
+              <Avatar character={student} />
+              <div>
+                <strong>{student.name}</strong>
+                <p className="demo-aside">Votre personnage</p>
+              </div>
+            </div>
+            <div className="demo-field">
+              <Label htmlFor="new-post">Publication RP</Label>
+              <textarea
+                id="new-post"
+                aria-describedby="post-privacy"
+                rows={3}
+                maxLength={600}
+                value={post}
+                onChange={(event) => setPost(event.target.value)}
+                placeholder="Écrire une publication…"
+              />
+            </div>
+            <div className="composer-actions">
+              <p className="demo-aside" id="post-privacy">
+                Session locale. N’ajoutez aucune donnée personnelle.
+              </p>
+              <Button type="submit" disabled={!post.trim()}>
+                <Send aria-hidden="true" /> Publier
+              </Button>
+            </div>
+          </form>
+          {posts.map((item) => (
+            <PostCard key={item.id} post={item} />
+          ))}
+        </div>
+        <aside className="social-sidebar" aria-label="Communauté">
+          <section className="demo-panel" aria-labelledby="social-members">
+            <header className="demo-panel-header">
+              <h2 id="social-members">Dans le fil</h2>
+            </header>
+            <ul className="demo-panel-list">
+              {authors.map((id) => {
+                const person = findCharacter(id);
+                return person ? (
+                  <li key={id}>
+                    <CharacterLink character={person} />
+                  </li>
+                ) : null;
+              })}
+            </ul>
+            <Link
+              to="/preview/directory"
+              className="social-sidebar-link text-link"
+            >
+              Voir les membres <ArrowRight aria-hidden="true" />
+            </Link>
+          </section>
+        </aside>
       </div>
     </div>
   );
@@ -170,9 +215,8 @@ export function AgendaPage() {
   return (
     <div className="demo-page">
       <DemoHeading
-        section="Communauté"
-        title="Agenda universitaire"
-        description="Rendez-vous fictifs du semestre d’automne. Les inscriptions sont simulées."
+        title="Agenda"
+        description="Les inscriptions sont simulées."
       />
       <div className="demo-filters">
         <div>
@@ -194,11 +238,11 @@ export function AgendaPage() {
             checked={savedOnly}
             onChange={(event) => setSavedOnly(event.target.checked)}
           />{' '}
-          Mes inscriptions simulées
+          Mes inscriptions
         </label>
       </div>
       {filtered.length ? (
-        <ul className="agenda-list">
+        <ol className="demo-panel agenda-list">
           {filtered.map(
             ({
               id,
@@ -214,37 +258,34 @@ export function AgendaPage() {
               const attending = saved.includes(id);
               return (
                 <li key={id}>
-                  <Card className="demo-card agenda-card">
+                  <Card className="agenda-card">
                     <time className="date-tile" dateTime={datetime}>
                       <strong>{day}</strong>
                       <small>{month}</small>
                     </time>
                     <div>
-                      <Badge variant="outline">{label}</Badge>
+                      <span className="demo-date">{label}</span>
                       <h2>{title}</h2>
                       <p>{description}</p>
                       <p className="agenda-meta">
-                        <CalendarDays aria-hidden="true" /> {time}{' '}
-                        <MapPin aria-hidden="true" /> {place}
+                        {time} <MapPin aria-hidden="true" /> {place}
                       </p>
                     </div>
                     <Button
                       type="button"
                       variant={attending ? 'secondary' : 'outline'}
                       aria-pressed={attending}
-                      aria-label={`${attending ? 'Inscription simulée' : 'Simuler l’inscription'} · ${title}`}
+                      aria-label={`${attending ? 'Inscrit' : 'S’inscrire'} · ${title}`}
                       onClick={() => toggleEvent(id)}
                     >
-                      {attending
-                        ? 'Inscription simulée'
-                        : 'Simuler l’inscription'}
+                      {attending ? 'Inscrit' : 'S’inscrire'}
                     </Button>
                   </Card>
                 </li>
               );
             },
           )}
-        </ul>
+        </ol>
       ) : (
         <NoResults description="Aucun rendez-vous pour ces filtres." />
       )}

@@ -12,12 +12,10 @@ import {
 import { findHouse, type Character } from './data';
 
 export function DemoHeading({
-  section,
   title,
   description,
   action,
 }: {
-  section?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -25,7 +23,6 @@ export function DemoHeading({
   return (
     <header className="demo-heading">
       <div>
-        {section && <p className="eyebrow">{section}</p>}
         <h1>{title}</h1>
         {description && <p className="demo-description">{description}</p>}
       </div>
@@ -42,13 +39,19 @@ export function Avatar({ character }: { character: Character }) {
   );
 }
 
-export function CharacterLink({ character }: { character: Character }) {
+export function CharacterLink({
+  character,
+  showHouse = true,
+}: {
+  character: Character;
+  showHouse?: boolean;
+}) {
   return (
     <Link className="demo-person" to={`/preview/people/${character.id}`}>
       <Avatar character={character} />
       <span>
         {character.name}
-        <small>{findHouse(character.house)?.name} House</small>
+        {showHouse && <small>{findHouse(character.house)?.name} House</small>}
       </span>
     </Link>
   );

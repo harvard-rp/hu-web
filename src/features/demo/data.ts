@@ -2,122 +2,77 @@ export const houses = [
   {
     id: 'adams',
     name: 'Adams',
-    color: '#79283d',
-    symbol: '✦',
+    color: '#8d384a',
     location: 'River Houses',
-    traits: ['Créativité', 'Indépendance', 'Culture'],
+    traits: ['Créativité', 'Indépendance', 'Ouverture d’esprit'],
     summary:
-      'Dans la démo, Adams rassemble les esprits qui lancent un ciné-club après le dîner et accueillent les idées qui bousculent les habitudes.',
+      'Adams réunit des personnages créatifs et indépendants qui aiment échanger autour des arts, de la littérature, du cinéma, du théâtre ou de la musique.',
   },
   {
     id: 'cabot',
     name: 'Cabot',
     color: '#374d6a',
-    symbol: '◇',
     location: 'Quad Houses',
-    traits: ['Accueil', 'Entraide', 'Curiosité'],
-    summary:
-      'On imagine Cabot autour de longues tables, où une conversation commencée au café finit par devenir un projet partagé.',
   },
   {
     id: 'currier',
     name: 'Currier',
     color: '#356254',
-    symbol: '✿',
     location: 'Quad Houses',
-    traits: ['Écoute', 'Expression', 'Collectif'],
-    summary:
-      'Cette interprétation de Currier fait la part belle aux petites scènes et aux rendez-vous où chacun peut prendre la parole.',
   },
   {
     id: 'dunster',
     name: 'Dunster',
     color: '#8a5136',
-    symbol: '✧',
     location: 'River Houses',
-    traits: ['Énergie', 'Hospitalité', 'Initiative'],
-    summary:
-      'Dunster est ici une maison de rencontres spontanées, où un premier bonjour peut donner lieu à toute une soirée.',
   },
   {
     id: 'eliot',
     name: 'Eliot',
     color: '#525178',
-    symbol: '△',
     location: 'River Houses',
-    traits: ['Soin', 'Rigueur', 'Échange'],
-    summary:
-      'Dans le prototype, Eliot accueille les personnages qui aiment préparer les détails et donner du temps aux conversations de fond.',
   },
   {
     id: 'kirkland',
     name: 'Kirkland',
     color: '#6a493d',
-    symbol: '✶',
     location: 'River Houses',
-    traits: ['Théâtre', 'Improvisation', 'Amitié'],
-    summary:
-      'Kirkland sert de décor à des répétitions tardives, des projets improvisés et des rencontres autour de la scène.',
   },
   {
     id: 'leverett',
     name: 'Leverett',
     color: '#3f5b74',
-    symbol: '⊹',
     location: 'River Houses',
-    traits: ['Diversité', 'Élan', 'Ouverture'],
-    summary:
-      'La version RP de Leverett invite à croiser des parcours différents entre deux allées et à faire place aux nouvelles idées.',
   },
   {
     id: 'lowell',
     name: 'Lowell',
     color: '#4c4169',
-    symbol: '❋',
     location: 'River Houses',
-    traits: ['Traditions', 'Transmission', 'Dialogue'],
-    summary:
-      'Ce Lowell fictif privilégie les rendez-vous réguliers et les conversations où les histoires d’une promotion passent à la suivante.',
   },
   {
     id: 'mather',
     name: 'Mather',
     color: '#4a5b4a',
-    symbol: '⬡',
     location: 'River Houses',
-    traits: ['Fabrication', 'Ingéniosité', 'Partage'],
-    summary:
-      'On imagine à Mather des ateliers où l’on essaie, démonte et recommence ensemble, quelle que soit sa spécialité.',
   },
   {
     id: 'pforzheimer',
     name: 'Pforzheimer',
     color: '#705138',
-    symbol: '◈',
     location: 'Quad Houses',
-    traits: ['Curiosité', 'Esprit de groupe', 'Créativité'],
-    summary:
-      'Dans cette démo, Pforzheimer accueille des projets de voisinage qui naissent d’un détail remarqué au détour du Quad.',
   },
   {
     id: 'quincy',
     name: 'Quincy',
     color: '#815344',
-    symbol: '✺',
     location: 'River Houses',
-    traits: ['Convivialité', 'Organisation', 'Ouverture'],
-    summary:
-      'Notre Quincy fictif est une maison où l’on prépare les rencontres du campus et où les invitations circulent facilement.',
   },
   {
     id: 'winthrop',
     name: 'Winthrop',
     color: '#3b5963',
-    symbol: '✷',
     location: 'River Houses',
-    traits: ['Persévérance', 'Esprit d’équipe', 'Équilibre'],
-    summary:
-      'Winthrop est ici le point de départ de projets collectifs, des sorties au bord de l’eau aux rendez-vous de travail.',
   },
 ] as const;
 
@@ -163,7 +118,7 @@ export const characters: readonly Character[] = [
     year: '2e année',
     points: 840,
     tone: 'berry',
-    bio: 'Camille tient un carnet d’observations sur le campus et espère un jour en faire un recueil. On la retrouve souvent près de la bibliothèque, avec un café trop froid et un livre de trop.',
+    bio: 'Camille étudie la littérature. Elle écrit des nouvelles et aide Nora à organiser les soirées de lecture. Elle travaille souvent à la bibliothèque avec Iris.',
   },
   {
     id: 'ambrose',
@@ -174,7 +129,7 @@ export const characters: readonly Character[] = [
     year: '3e année',
     points: 1280,
     tone: 'blue',
-    bio: 'Ambrose aime les débats préparés et les promenades silencieuses près de la rivière.',
+    bio: 'Ambrose étudie le droit et participe aux ateliers d’éloquence. Il retrouve souvent Camille à la bibliothèque pour préparer les débats.',
   },
   {
     id: 'nora',
@@ -196,7 +151,7 @@ export const characters: readonly Character[] = [
     year: '1re année',
     points: 970,
     tone: 'gold',
-    bio: 'Milo collectionne les plans du campus à l’aube pour un court métrage fictif.',
+    bio: 'Milo tourne son premier court métrage pour un cours de cinéma. Il s’occupe aussi des inscriptions au BDE.',
   },
   {
     id: 'jules',
@@ -207,7 +162,7 @@ export const characters: readonly Character[] = [
     year: '3e année',
     points: 760,
     tone: 'green',
-    bio: 'Jules préfère un prototype fonctionnel à une présentation parfaite.',
+    bio: 'Jules passe ses après-midi à l’atelier. Pour son projet de troisième année, il répare un vieux projecteur avec Eden.',
   },
   {
     id: 'iris',
@@ -218,7 +173,7 @@ export const characters: readonly Character[] = [
     year: '2e année',
     points: 710,
     tone: 'gold',
-    bio: 'Iris monte une exposition de croquis réalisés sous les arbres du campus.',
+    bio: 'Iris travaille sur une série de croquis du campus pour son cours d’art. Elle dessine souvent avec Camille.',
   },
   {
     id: 'alex',
@@ -229,7 +184,7 @@ export const characters: readonly Character[] = [
     year: '1re année',
     points: 650,
     tone: 'blue',
-    bio: 'Alex arpente les serres et prête volontiers ses notes de terrain.',
+    bio: 'Alex étudie la biologie et prend des permanences aux serres le jeudi.',
   },
   {
     id: 'lea',
@@ -240,7 +195,7 @@ export const characters: readonly Character[] = [
     year: '2e année',
     points: 620,
     tone: 'berry',
-    bio: 'Léa préfère les entraînements du matin et improvise les sorties du week-end.',
+    bio: 'Léa s’entraîne tôt et organise une sortie course le samedi.',
   },
   {
     id: 'ciel',
@@ -251,7 +206,7 @@ export const characters: readonly Character[] = [
     year: '1re année',
     points: 580,
     tone: 'gold',
-    bio: 'Ciel prête sa voix à des lectures et à des répétitions en plusieurs langues.',
+    bio: 'Ciel étudie les langues étrangères et aide Nora à trouver des textes pour les soirées de lecture.',
   },
   {
     id: 'remy',
@@ -262,7 +217,7 @@ export const characters: readonly Character[] = [
     year: '2e année',
     points: 560,
     tone: 'green',
-    bio: 'Rémy conçoit des affiches pour les rencontres du campus fictif.',
+    bio: 'Rémy crée les affiches du BDE en parallèle de ses cours de marketing.',
   },
   {
     id: 'sasha',
@@ -273,7 +228,7 @@ export const characters: readonly Character[] = [
     year: '3e année',
     points: 510,
     tone: 'berry',
-    bio: 'Sasha recueille les récits de promotion pour un projet de mémoire.',
+    bio: 'Sasha prépare un mémoire sur la vie en résidence. Elle mène des entretiens avec des étudiants de première année.',
   },
   {
     id: 'manon',
@@ -284,7 +239,7 @@ export const characters: readonly Character[] = [
     year: '2e année',
     points: 490,
     tone: 'blue',
-    bio: 'Manon esquisse les bancs et passages méconnus du Quad.',
+    bio: 'Pour son cours d’architecture, Manon relève les accès et les cheminements du Quad.',
   },
   {
     id: 'eden',
@@ -295,7 +250,7 @@ export const characters: readonly Character[] = [
     year: '1re année',
     points: 450,
     tone: 'green',
-    bio: 'Eden construit des outils simples pour les projets collectifs.',
+    bio: 'Eden s’occupe du site du BDE et donne un coup de main à Jules à l’atelier.',
   },
 ];
 
@@ -329,26 +284,24 @@ export const clubs: readonly Club[] = [
   {
     name: 'Natation',
     category: 'Sport',
-    description:
-      'Des créneaux en bassin pour travailler ses longueurs et rencontrer d’autres nageurs.',
+    description: 'Entraînements en bassin et travail technique en groupe.',
     members: 7,
     provenance: 'documented',
-    note: 'Type de responsable à confirmer. Les deux mentions de la source sont réunies ici.',
+    note: 'Type de responsable à confirmer.',
   },
   {
     name: 'Club de droit',
     category: 'Académique',
-    description:
-      'Un espace de discussion autour de cas fictifs et de débats argumentés.',
+    description: 'Études de cas et débats autour du droit.',
     members: 0,
     provenance: 'to-confirm',
-    note: 'Présent uniquement dans les descriptions. Inscription au catalogue à confirmer.',
+    note: 'Le club figure dans les descriptions. Sa présence dans l’annuaire reste à confirmer.',
   },
   {
     name: 'BDE',
     category: 'Loisirs et organisation',
     description:
-      'Une équipe qui propose des temps de rencontre et coordonne les initiatives étudiantes.',
+      'Le bureau des étudiants organise les rencontres et accompagne les projets des clubs.',
     members: 8,
     capacity: 10,
     leader: 'Milo Ashford',
@@ -357,8 +310,7 @@ export const clubs: readonly Club[] = [
   {
     name: 'Atelier argentique',
     category: 'Art et culture',
-    description:
-      'Un petit laboratoire de regards sur le campus, du cadrage au tirage.',
+    description: 'Prise de vue sur pellicule, développement et tirage.',
     members: 9,
     leader: 'Iris Bellamy',
     provenance: 'sample',
@@ -366,8 +318,7 @@ export const clubs: readonly Club[] = [
   {
     name: 'Cercle des carnets',
     category: 'Art et culture',
-    description:
-      'Un rendez-vous d’écriture pour échanger des fragments et des lectures.',
+    description: 'Séances d’écriture et relecture de textes en groupe.',
     members: 6,
     leader: 'Camille Delorme',
     provenance: 'sample',
@@ -375,16 +326,14 @@ export const clubs: readonly Club[] = [
   {
     name: 'Observatoire du Quad',
     category: 'Académique',
-    description:
-      'Un groupe curieux qui prépare des observations et tient un journal du ciel.',
+    description: 'Observations du ciel et tenue d’un carnet de terrain.',
     members: 5,
     provenance: 'sample',
   },
   {
     name: 'Course du matin',
     category: 'Sport',
-    description:
-      'Des sorties conviviales en petit groupe, au rythme de chacun.',
+    description: 'Sortie course le samedi matin, avec deux groupes d’allure.',
     members: 11,
     leader: 'Léa Wren',
     provenance: 'sample',
@@ -392,8 +341,7 @@ export const clubs: readonly Club[] = [
   {
     name: 'Table de jeux',
     category: 'Loisirs et organisation',
-    description:
-      'Des tables ouvertes pour découvrir un jeu et trouver de nouveaux partenaires.',
+    description: 'Jeux de société en salle commune le vendredi.',
     members: 10,
     provenance: 'sample',
   },
@@ -403,14 +351,14 @@ export const announcements = [
   {
     title: 'La bibliothèque prolonge ses horaires',
     description:
-      'La salle de lecture reste ouverte en soirée pendant la semaine des ateliers.',
-    date: '16 novembre',
+      'La salle de lecture fermera à 22 h du lundi au jeudi, pendant la semaine des ateliers.',
+    date: '25 novembre',
   },
   {
     title: 'Appel à contributions pour le journal',
     description:
-      'La rédaction fictive recherche des chroniques de campus et des récits de personnages.',
-    date: '14 novembre',
+      'Envoyez vos idées de sujet à Nora avant vendredi pour le prochain numéro.',
+    date: '23 novembre',
   },
 ];
 
@@ -418,9 +366,9 @@ export const events = [
   {
     id: 'reading',
     title: 'Veillée de lecture',
-    month: 'NOV.',
-    day: '20',
-    datetime: '2026-11-20T18:30',
+    month: 'nov.',
+    day: '27',
+    datetime: '2026-11-27T18:30',
     time: '18 h 30',
     place: 'Bibliothèque · Salle de lecture',
     category: 'Culture',
@@ -429,25 +377,25 @@ export const events = [
   {
     id: 'photo',
     title: 'Promenade argentique',
-    month: 'NOV.',
-    day: '22',
-    datetime: '2026-11-22T15:00',
+    month: 'nov.',
+    day: '29',
+    datetime: '2026-11-29T15:00',
     time: '15 h 00',
     place: 'Le Quad · Allée centrale',
     category: 'Clubs',
     description:
-      'Un itinéraire fictif pour capter les dernières couleurs de l’automne.',
+      'Rendez-vous devant l’entrée du Quad. Pensez à prendre une pellicule.',
   },
   {
     id: 'debate',
     title: 'Atelier d’éloquence',
-    month: 'NOV.',
-    day: '26',
-    datetime: '2026-11-26T17:00',
+    month: 'déc.',
+    day: '03',
+    datetime: '2026-12-03T17:00',
     time: '17 h 00',
     place: 'Eliot House · Salon',
     category: 'Études',
-    description: 'Un débat guidé à partir de situations entièrement fictives.',
+    description: 'Exercices en binôme. Le sujet sera donné sur place.',
   },
 ] as const;
 
@@ -467,14 +415,14 @@ export const initialPosts: readonly DemoPost[] = [
     id: 'fall',
     authorId: 'iris',
     time: 'Il y a 2 h',
-    text: 'Le campus a pris les couleurs de l’encre et du cuivre ce matin. J’ai presque fini la série de croquis pour l’atelier.',
+    text: 'J’ai pris cette photo en rentrant de l’atelier. On se retrouve au même endroit dimanche pour les croquis ?',
     photo: true,
     likes: 18,
     comments: [
       {
         id: 'fall-1',
         authorId: 'camille',
-        text: 'Garde-moi une place à l’atelier, je viendrai avec mon carnet.',
+        text: 'Oui, je prends mon carnet. Vers 15 h ?',
       },
     ],
   },
@@ -482,7 +430,7 @@ export const initialPosts: readonly DemoPost[] = [
     id: 'reading',
     authorId: 'nora',
     time: 'Hier',
-    text: 'Je prépare la prochaine veillée de lecture. Cette fois, j’aimerais entendre des textes que personne n’a encore lus devant un public.',
+    text: 'Il reste deux places pour lire vendredi. Si vous avez un texte court, envoyez-moi un message.',
     likes: 9,
     comments: [],
   },
@@ -492,17 +440,17 @@ export const relations = [
   {
     characterId: 'iris',
     kind: 'Amitié',
-    note: 'Partagent un carnet de croquis et se retrouvent entre deux cours.',
+    note: 'Elles se retrouvent le jeudi pour dessiner.',
   },
   {
     characterId: 'nora',
     kind: 'Collaboration',
-    note: 'Préparent ensemble la prochaine veillée de lecture.',
+    note: 'Elles préparent la prochaine soirée de lecture.',
   },
   {
     characterId: 'ambrose',
     kind: 'Rivalité amicale',
-    note: 'Se défient régulièrement lors des débats de la bibliothèque.',
+    note: 'Ils se retrouvent souvent dans des camps opposés aux débats.',
   },
 ] as const;
 
@@ -557,7 +505,7 @@ export const initialReviews: readonly Review[] = [
       major: 'Architecture',
       personality: 'Observatrice et persévérante.',
       story:
-        'Alma dessine les lieux qu’elle traverse pour apprendre à les connaître.',
+        'Alma vient d’arriver en architecture. Elle prépare un carnet de relevés du quartier pour son premier projet.',
     },
   },
   {
@@ -569,7 +517,7 @@ export const initialReviews: readonly Review[] = [
       profile: 'non-student',
       personality: 'Réservé et attentif.',
       story:
-        'Soren participe à un collectif fictif qui aide à organiser les rencontres du quartier.',
+        'Soren fait partie du collectif de quartier et prépare sa prochaine réunion.',
     },
   },
 ];

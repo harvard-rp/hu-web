@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowUpRight, CalendarDays, Megaphone, Search } from 'lucide-react';
 import { Link } from 'react-router';
 
@@ -31,6 +31,7 @@ const searchableDestinations = [
 export function CampusSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const focusTarget = useRef<string | null>(null);
   const sections = searchableDestinations.filter(({ label }) =>
     normalizeSearch(label).includes(normalizeSearch(query)),
   );
@@ -45,19 +46,26 @@ export function CampusSearch() {
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="icon-button"
+          size="sm"
+          className="campus-search-trigger"
           aria-label="Rechercher sur le campus"
         >
           <Search aria-hidden="true" />
+          <span className="campus-search-label">Rechercher</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          const target = focusTarget.current;
+          if (!target) return;
+          focusTarget.current = null;
+          event.preventDefault();
+          document.getElementById(target)?.focus({ preventScroll: true });
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Rechercher sur le campus</DialogTitle>
-          <DialogDescription>
-            Accéder rapidement à une rubrique de la démonstration.
-          </DialogDescription>
+          <DialogDescription>Cherchez par nom de rubrique.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
           <Label htmlFor="campus-search">Nom de la rubrique</Label>
@@ -73,7 +81,10 @@ export function CampusSearch() {
               <li key={path}>
                 <Link
                   to={path}
-                  onClick={() => changeOpen(false)}
+                  onClick={() => {
+                    focusTarget.current = path.split('#')[1] ?? 'main-content';
+                    changeOpen(false);
+                  }}
                   className="search-result"
                 >
                   <Icon aria-hidden="true" /> {label}

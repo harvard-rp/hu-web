@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,7 +20,7 @@ describe('Public campus routes', () => {
   it('presents the Digital Campus as an independent roleplay community', () => {
     renderRoute();
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Digital Campus.' }),
+      screen.getByRole('heading', { level: 1, name: 'Harvard University RP' }),
     ).toBeVisible();
     expect(
       screen.getByText(/sans affiliation avec Harvard University/i),
@@ -33,14 +33,20 @@ describe('Public campus routes', () => {
   it('navigates to the demonstration and exposes the sample module routes', async () => {
     const user = userEvent.setup();
     renderRoute();
-    await user.click(screen.getByRole('link', { name: 'Entrer dans la démo' }));
+    await user.click(screen.getByRole('link', { name: 'Accéder au campus' }));
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Bienvenue, Camille.',
+        name: 'Accueil',
       }),
     ).toBeVisible();
     expect(screen.getByText('Mode démonstration')).toBeVisible();
+    expect(
+      screen.getByRole('region', { name: 'Mon personnage' }),
+    ).toHaveTextContent('Camille Delorme');
+    expect(
+      screen.getByRole('region', { name: 'Activité récente' }),
+    ).toBeVisible();
     expect(
       screen.getByText('La bibliothèque prolonge ses horaires'),
     ).toBeVisible();
@@ -48,7 +54,7 @@ describe('Public campus routes', () => {
     const nav = within(
       screen.getByRole('navigation', { name: 'Navigation du campus' }),
     );
-    expect(nav.getByRole('link', { name: 'Tableau de bord' })).toHaveAttribute(
+    expect(nav.getByRole('link', { name: 'Accueil' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -66,7 +72,7 @@ describe('Public campus routes', () => {
     const user = userEvent.setup();
     renderRoute('/login');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Connexion au campus.' }),
+      screen.getByRole('heading', { level: 1, name: 'Connexion' }),
     ).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Continuer avec Discord' }),
@@ -75,10 +81,10 @@ describe('Public campus routes', () => {
       screen.getByText(/La connexion Discord est indisponible/i),
     ).toBeVisible();
     await user.click(
-      screen.getByRole('link', { name: 'Accéder à la démonstration' }),
+      screen.getByRole('link', { name: 'Accéder au campus sans compte' }),
     );
     expect(
-      await screen.findByRole('heading', { name: 'Bienvenue, Camille.' }),
+      await screen.findByRole('heading', { name: 'Accueil' }),
     ).toBeVisible();
   });
 
@@ -86,11 +92,11 @@ describe('Public campus routes', () => {
     const user = userEvent.setup();
     renderRoute('/unknown-place');
     expect(
-      screen.getByRole('heading', { name: 'Page introuvable.' }),
+      screen.getByRole('heading', { name: 'Page introuvable' }),
     ).toBeVisible();
     await user.click(screen.getByRole('link', { name: 'Retour à l’accueil' }));
     expect(
-      screen.getByRole('heading', { name: 'Digital Campus.' }),
+      screen.getByRole('heading', { name: 'Harvard University RP' }),
     ).toBeVisible();
   });
 
@@ -108,11 +114,13 @@ describe('Public campus routes', () => {
     });
     await user.type(input, 'evenement');
     expect(
-      within(dialog).queryByRole('link', { name: 'Tableau de bord' }),
+      within(dialog).queryByRole('link', { name: 'Accueil' }),
     ).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole('link', { name: 'Événements' }));
     expect(dialog).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Agenda' })).toBeVisible();
+    const events = screen.getByRole('region', { name: 'Prochains événements' });
+    expect(events).toBeVisible();
+    await waitFor(() => expect(events).toHaveFocus());
   });
 });
 

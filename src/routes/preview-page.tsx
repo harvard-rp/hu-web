@@ -1,89 +1,69 @@
 import {
-  ArrowUpRight,
+  ArrowRight,
   CalendarDays,
   Megaphone,
-  Shield,
-  Sparkles,
-  Trophy,
+  MessageSquare,
 } from 'lucide-react';
 import { Link } from 'react-router';
 
-import campusImage from '@/assets/campus-autumn.webp';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { announcements, events, ranking, student } from '@/features/demo/data';
-
-const stats = [
-  {
-    label: 'Réputation',
-    value: student.points,
-    subtitle: 'Points fictifs',
-    path: '/preview/ranking',
-    Icon: Sparkles,
-  },
-  {
-    label: 'Classement',
-    value: `${ranking.indexOf(student) + 1}e`,
-    subtitle: 'Position de démonstration',
-    path: '/preview/ranking',
-    Icon: Trophy,
-  },
-  {
-    label: 'Ma House',
-    value: 'Adams',
-    subtitle: 'River Houses',
-    path: '/preview/houses/adams',
-    Icon: Shield,
-  },
-];
+import {
+  announcements,
+  events,
+  findCharacter,
+  findHouse,
+  ranking,
+  student,
+} from '@/features/demo/data';
+import { useDemo } from '@/features/demo/demo-state';
+import { Avatar, CharacterLink } from '@/features/demo/demo-ui';
 
 export function PreviewPage() {
+  const { posts } = useDemo();
   return (
     <div className="preview-page">
+      <header className="dashboard-heading">
+        <h1>Accueil</h1>
+        <span>Semestre d’automne</span>
+      </header>
       <section
         id="overview"
-        className="preview-hero demo-welcome"
         tabIndex={-1}
-        aria-labelledby="preview-title"
+        className="dashboard-overview demo-panel"
+        aria-label="Mon personnage"
       >
-        <img
-          src={campusImage}
-          alt=""
-          width={1260}
-          height={945}
-          fetchPriority="high"
-        />
-        <div className="preview-hero-copy">
-          <Badge variant="outline" className="preview-label">
-            Semestre d’automne
+        <div className="dashboard-identity">
+          <Avatar character={student} />
+          <div>
+            <Link className="dashboard-name" to="/preview/character">
+              {student.name}
+            </Link>
+            <p>
+              {student.major} · {student.year}
+            </p>
+          </div>
+          <Badge variant="outline" asChild>
+            <Link to={`/preview/houses/${student.house}`}>
+              {findHouse(student.house)?.name} House
+            </Link>
           </Badge>
-          <h1 id="preview-title">Bienvenue, Camille.</h1>
-          <p>
-            Adams House <span aria-hidden="true">·</span> Littérature{' '}
-            <span aria-hidden="true">·</span> 2e année
-          </p>
-          <Link className="preview-profile" to="/preview/character">
-            Voir ma fiche <ArrowUpRight aria-hidden="true" />
+        </div>
+        <div className="dashboard-stats">
+          <Link to="/preview/ranking">
+            <span>Réputation</span>
+            <strong>
+              {student.points.toLocaleString('fr-FR')} <small>pts</small>
+            </strong>
+          </Link>
+          <Link to="/preview/ranking">
+            <span>Classement</span>
+            <strong>
+              {ranking.indexOf(student) + 1}
+              <sup>e</sup>
+            </strong>
           </Link>
         </div>
       </section>
-
-      <div className="dashboard-stats">
-        {stats.map(({ label, value, subtitle, path, Icon }) => (
-          <Card key={label} className="demo-card stat-card">
-            <Link to={path} className="stat-link">
-              <span className="stat-icon">
-                <Icon aria-hidden="true" />
-              </span>
-              <span className="stat-label">{label}</span>
-              <strong>{value}</strong>
-              <small>{subtitle}</small>
-              <ArrowUpRight className="stat-arrow" aria-hidden="true" />
-            </Link>
-          </Card>
-        ))}
-      </div>
-
       <div className="dashboard-columns">
         <section
           id="announcements"
@@ -92,9 +72,7 @@ export function PreviewPage() {
           className="demo-panel"
         >
           <header className="demo-panel-header">
-            <span className="panel-icon">
-              <Megaphone aria-hidden="true" />
-            </span>
+            <Megaphone aria-hidden="true" />
             <h2 id="announcements-title">Annonces</h2>
           </header>
           <ul className="demo-panel-list">
@@ -114,12 +92,10 @@ export function PreviewPage() {
           className="demo-panel"
         >
           <header className="demo-panel-header">
-            <span className="panel-icon">
-              <CalendarDays aria-hidden="true" />
-            </span>
-            <h2 id="events-title">Agenda</h2>
+            <CalendarDays aria-hidden="true" />
+            <h2 id="events-title">Prochains événements</h2>
             <Link to="/preview/agenda" className="text-link panel-action">
-              Voir l’agenda <ArrowUpRight aria-hidden="true" />
+              Agenda <ArrowRight aria-hidden="true" />
             </Link>
           </header>
           <ul className="demo-panel-list compact-events">
@@ -140,6 +116,28 @@ export function PreviewPage() {
           </ul>
         </section>
       </div>
+      <section className="demo-panel" aria-labelledby="activity-title">
+        <header className="demo-panel-header">
+          <MessageSquare aria-hidden="true" />
+          <h2 id="activity-title">Activité récente</h2>
+          <Link to="/preview/social" className="text-link panel-action">
+            Publications <ArrowRight aria-hidden="true" />
+          </Link>
+        </header>
+        <ul className="demo-panel-list activity-list">
+          {posts.slice(0, 2).map((post) => {
+            const author = findCharacter(post.authorId);
+            if (!author) return null;
+            return (
+              <li key={post.id}>
+                <CharacterLink character={author} showHouse={false} />
+                <p>{post.text}</p>
+                <span className="demo-date">{post.time}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }

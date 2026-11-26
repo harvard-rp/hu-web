@@ -15,12 +15,12 @@ import { NavLink } from 'react-router';
 
 export const campusGroups = [
   {
-    title: 'Vie étudiante',
+    title: 'Campus',
     links: [
-      { label: 'Tableau de bord', path: '/preview', Icon: LayoutDashboard },
+      { label: 'Accueil', path: '/preview', Icon: LayoutDashboard },
       { label: 'Mon personnage', path: '/preview/character', Icon: UserRound },
       {
-        label: 'Créer une fiche',
+        label: 'Créer un personnage',
         path: '/preview/character/new',
         Icon: UserPlus,
       },
@@ -33,15 +33,20 @@ export const campusGroups = [
       { label: 'Houses', path: '/preview/houses', Icon: Shield },
       { label: 'Clubs', path: '/preview/clubs', Icon: BookOpen },
       { label: 'Filières', path: '/preview/majors', Icon: GraduationCap },
-      { label: 'Effectifs', path: '/preview/directory', Icon: UsersRound },
+      { label: 'Membres', path: '/preview/directory', Icon: UsersRound },
     ],
   },
   {
     title: 'Communauté',
     links: [
       { label: 'Classement', path: '/preview/ranking', Icon: Trophy },
-      { label: 'Journal RP', path: '/preview/social', Icon: MessagesSquare },
+      { label: 'Publications', path: '/preview/social', Icon: MessagesSquare },
       { label: 'Agenda', path: '/preview/agenda', Icon: CalendarDays },
+    ],
+  },
+  {
+    title: 'Gestion',
+    links: [
       { label: 'Espace staff', path: '/preview/staff', Icon: ClipboardCheck },
     ],
   },

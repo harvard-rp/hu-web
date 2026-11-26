@@ -1,10 +1,8 @@
-import { ArrowUpRight, Medal } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,52 +23,109 @@ import {
   normalizeSearch,
 } from '@/features/demo/demo-ui';
 
+function RelationList() {
+  return (
+    <ul className="demo-panel-list relations-list">
+      {relations.map(({ characterId, kind, note }) => {
+        const character = findCharacter(characterId);
+        if (!character) return null;
+        return (
+          <li key={characterId}>
+            <CharacterLink character={character} showHouse={false} />
+            <div>
+              <strong>{kind}</strong>
+              <p>{note}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function CharacterPage({ own = false }: { own?: boolean }) {
   const { characterId = '' } = useParams();
   const character = own ? student : findCharacter(characterId);
   if (!character)
     return (
       <div className="demo-page">
-        <BackLink to="/preview/directory">Voir les effectifs</BackLink>
+        <BackLink to="/preview/directory">Voir les membres</BackLink>
         <DemoHeading title="Personnage introuvable" />
       </div>
     );
   const house = findHouse(character.house);
+  const isStudent = character.id === student.id;
+  const relation = relations.find((item) => item.characterId === character.id);
   return (
-    <div className="demo-page">
-      <BackLink to={own ? '/preview' : '/preview/directory'}>
-        {own ? 'Tableau de bord' : 'Voir les effectifs'}
-      </BackLink>
-      <div className="profile-card demo-panel">
+    <div className="demo-page profile-page">
+      <header className="profile-card demo-panel">
         <Avatar character={character} />
-        <div>
-          <DemoHeading
-            section={own ? 'Mon personnage' : 'Profil fictif'}
-            title={character.name}
-            description={`${character.major} · ${character.year}`}
-          />
-          <Link className="text-link" to={`/preview/houses/${character.house}`}>
-            {house?.name} House <ArrowUpRight aria-hidden="true" />
-          </Link>
-        </div>
+        <DemoHeading title={character.name} description="Personnage fictif" />
         {own && (
           <Button asChild variant="outline">
-            <Link to="/preview/character/new">Créer une fiche</Link>
+            <Link to="/preview/character/new">Créer un personnage</Link>
           </Button>
         )}
+      </header>
+      <div className="profile-columns">
+        <section className="demo-panel" aria-labelledby="profile-studies">
+          <header className="demo-panel-header">
+            <h2 id="profile-studies">Études</h2>
+          </header>
+          <dl className="profile-facts demo-panel-copy">
+            <div>
+              <dt>Filière</dt>
+              <dd>{character.major}</dd>
+            </div>
+            <div>
+              <dt>Année</dt>
+              <dd>{character.year}</dd>
+            </div>
+            <div>
+              <dt>House</dt>
+              <dd>
+                <Link
+                  className="text-link"
+                  to={`/preview/houses/${character.house}`}
+                >
+                  {house?.name} House
+                </Link>
+              </dd>
+            </div>
+          </dl>
+        </section>
+        <section className="demo-panel" aria-labelledby="profile-about">
+          <header className="demo-panel-header">
+            <h2 id="profile-about">Biographie</h2>
+          </header>
+          <p className="demo-panel-copy">{character.bio}</p>
+        </section>
       </div>
-      <section className="demo-panel" aria-labelledby="profile-about">
+      <section className="demo-panel" aria-labelledby="profile-relations">
         <header className="demo-panel-header">
-          <h2 id="profile-about">Présentation RP</h2>
-          <Badge variant="outline">Personnage fictif</Badge>
+          <h2 id="profile-relations">Relations</h2>
+          {isStudent && (
+            <Link to="/preview/relations" className="text-link panel-action">
+              Toutes les relations <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
         </header>
-        <p className="demo-panel-copy">{character.bio}</p>
+        {isStudent ? (
+          <RelationList />
+        ) : relation ? (
+          <ul className="demo-panel-list relations-list">
+            <li>
+              <CharacterLink character={student} showHouse={false} />
+              <div>
+                <strong>{relation.kind}</strong>
+                <p>{relation.note}</p>
+              </div>
+            </li>
+          </ul>
+        ) : (
+          <p className="demo-panel-copy">Aucune relation renseignée.</p>
+        )}
       </section>
-      {own && (
-        <Link to="/preview/relations" className="text-link">
-          Voir mes relations <ArrowUpRight aria-hidden="true" />
-        </Link>
-      )}
     </div>
   );
 }
@@ -86,16 +141,13 @@ export function DirectoryPage() {
   );
   return (
     <div className="demo-page">
-      <DemoHeading
-        section="Université"
-        title="Effectifs universitaires"
-        description="L’annuaire rassemble les personnages fictifs de cette démonstration."
-      />
+      <DemoHeading title="Membres" />
       <div className="demo-filters">
         <div>
           <Label htmlFor="people-search">Nom ou filière</Label>
           <Input
             id="people-search"
+            type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -120,15 +172,13 @@ export function DirectoryPage() {
         {matches.length} personnage{matches.length === 1 ? '' : 's'}
       </p>
       {matches.length ? (
-        <ul className="demo-grid directory-grid">
+        <ul className="demo-panel demo-panel-list member-list">
           {matches.map((character) => (
             <li key={character.id}>
-              <Card className="demo-card directory-card">
-                <CharacterLink character={character} />
-                <p>
-                  {character.major} · {character.year}
-                </p>
-              </Card>
+              <CharacterLink character={character} />
+              <p>
+                {character.major} · {character.year}
+              </p>
             </li>
           ))}
         </ul>
@@ -140,33 +190,72 @@ export function DirectoryPage() {
 }
 
 export function RankingPage() {
+  const [search, setSearch] = useState('');
+  const query = normalizeSearch(search);
+  const matches = ranking
+    .map((character, index) => ({
+      character,
+      position: index + 1,
+      house: findHouse(character.house)?.name,
+    }))
+    .filter(({ character, house }) =>
+      normalizeSearch(`${character.name} ${house ?? ''}`).includes(query),
+    );
   return (
     <div className="demo-page">
-      <DemoHeading
-        section="Communauté"
-        title="Classement de réputation"
-        description="Les positions et les points sont issus d’un jeu de données de démonstration."
-      />
-      <ol className="demo-panel ranking-list" aria-label="Classement">
-        {ranking.map((character, index) => (
-          <li
-            key={character.id}
-            className={
-              character.id === student.id ? 'current-student' : undefined
-            }
-          >
-            <span className="rank-value">
-              <span className="sr-only">Position </span>
-              {index + 1}
-              {index === 0 && <Medal aria-hidden="true" />}
-            </span>
-            <CharacterLink character={character} />
-            <strong className="rank-points">
-              {character.points.toLocaleString('fr-FR')} <small>pts</small>
-            </strong>
-          </li>
-        ))}
-      </ol>
+      <DemoHeading title="Classement" />
+      <div className="demo-filters">
+        <div>
+          <Label htmlFor="ranking-search">Rechercher par nom ou House</Label>
+          <Input
+            id="ranking-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+      </div>
+      <p className="sr-only" role="status">
+        {matches.length} résultat{matches.length === 1 ? '' : 's'}
+      </p>
+      {matches.length ? (
+        <div className="demo-panel ranking-panel">
+          <table className="ranking-table">
+            <caption className="sr-only">Classement de réputation</caption>
+            <thead>
+              <tr>
+                <th scope="col">Rang</th>
+                <th scope="col">Personnage</th>
+                <th scope="col">House</th>
+                <th scope="col">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.map(({ character, position, house }) => {
+                const active = character.id === student.id;
+                return (
+                  <tr
+                    key={character.id}
+                    className={active ? 'current-student' : undefined}
+                  >
+                    <td>{position}</td>
+                    <th scope="row">
+                      <CharacterLink character={character} showHouse={false} />
+                      {active && (
+                        <small className="active-character">Vous</small>
+                      )}
+                    </th>
+                    <td>{house}</td>
+                    <td>{character.points.toLocaleString('fr-FR')}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <NoResults />
+      )}
     </div>
   );
 }
@@ -174,26 +263,10 @@ export function RankingPage() {
 export function RelationsPage() {
   return (
     <div className="demo-page">
-      <DemoHeading
-        section="Vie étudiante"
-        title="Relations RP"
-        description="Les liens de Camille dans l’histoire fictive du campus."
-      />
-      <ul className="demo-grid directory-grid">
-        {relations.map(({ characterId, kind, note }) => {
-          const character = findCharacter(characterId);
-          if (!character) return null;
-          return (
-            <li key={characterId}>
-              <Card className="demo-card directory-card">
-                <CharacterLink character={character} />
-                <Badge variant="outline">{kind}</Badge>
-                <p>{note}</p>
-              </Card>
-            </li>
-          );
-        })}
-      </ul>
+      <DemoHeading title="Relations" description={student.name} />
+      <div className="demo-panel">
+        <RelationList />
+      </div>
     </div>
   );
 }
