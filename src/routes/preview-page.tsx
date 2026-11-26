@@ -7,19 +7,15 @@ import {
 import { Link } from 'react-router';
 
 import { Badge } from '@/components/ui/badge';
-import {
-  announcements,
-  events,
-  findCharacter,
-  findHouse,
-  ranking,
-  student,
-} from '@/features/demo/data';
+import { announcements, events } from '@/features/demo/data';
+import { findHouse } from '@/features/demo/catalogues';
+import { characterTypes } from '@/features/demo/characters';
 import { useDemo } from '@/features/demo/demo-state';
 import { Avatar, CharacterLink } from '@/features/demo/demo-ui';
 
 export function PreviewPage() {
-  const { posts } = useDemo();
+  const { posts, activeCharacter: person, characters, ranking } = useDemo();
+  if (!person) return null;
   return (
     <div className="preview-page">
       <header className="dashboard-heading">
@@ -33,36 +29,43 @@ export function PreviewPage() {
         aria-label="Mon personnage"
       >
         <div className="dashboard-identity">
-          <Avatar character={student} />
+          <Avatar character={person} />
           <div>
             <Link className="dashboard-name" to="/preview/character">
-              {student.name}
+              {person.name}
             </Link>
             <p>
-              {student.major} · {student.year}
+              {person.type === 'student'
+                ? [person.major, person.year].filter(Boolean).join(' · ') ||
+                  'Étudiant'
+                : characterTypes[person.type]}
             </p>
           </div>
-          <Badge variant="outline" asChild>
-            <Link to={`/preview/houses/${student.house}`}>
-              {findHouse(student.house)?.name} House
+          {person.type === 'student' && (
+            <Badge variant="outline" asChild>
+              <Link to={`/preview/houses/${person.house}`}>
+                {findHouse(person.house)?.name} House
+              </Link>
+            </Badge>
+          )}
+        </div>
+        {person.type === 'student' && (
+          <div className="dashboard-stats">
+            <Link to="/preview/ranking">
+              <span>Réputation</span>
+              <strong>
+                {person.points.toLocaleString('fr-FR')} <small>pts</small>
+              </strong>
             </Link>
-          </Badge>
-        </div>
-        <div className="dashboard-stats">
-          <Link to="/preview/ranking">
-            <span>Réputation</span>
-            <strong>
-              {student.points.toLocaleString('fr-FR')} <small>pts</small>
-            </strong>
-          </Link>
-          <Link to="/preview/ranking">
-            <span>Classement</span>
-            <strong>
-              {ranking.indexOf(student) + 1}
-              <sup>e</sup>
-            </strong>
-          </Link>
-        </div>
+            <Link to="/preview/ranking">
+              <span>Classement</span>
+              <strong>
+                {ranking.findIndex(({ id }) => id === person.id) + 1}
+                <sup>e</sup>
+              </strong>
+            </Link>
+          </div>
+        )}
       </section>
       <div className="dashboard-columns">
         <section
@@ -126,7 +129,7 @@ export function PreviewPage() {
         </header>
         <ul className="demo-panel-list activity-list">
           {posts.slice(0, 2).map((post) => {
-            const author = findCharacter(post.authorId);
+            const author = characters.find(({ id }) => id === post.authorId);
             if (!author) return null;
             return (
               <li key={post.id}>

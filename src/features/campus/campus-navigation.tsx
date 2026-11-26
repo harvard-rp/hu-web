@@ -13,12 +13,20 @@ import {
 } from 'lucide-react';
 import { NavLink } from 'react-router';
 
+import { useDemo } from '@/features/demo/demo-state';
+import { canOpenCampusPath } from './campus-access';
+
 export const campusGroups = [
   {
     title: 'Campus',
     links: [
       { label: 'Accueil', path: '/preview', Icon: LayoutDashboard },
       { label: 'Mon personnage', path: '/preview/character', Icon: UserRound },
+      {
+        label: 'Mes personnages',
+        path: '/preview/characters',
+        Icon: UsersRound,
+      },
       {
         label: 'Créer un personnage',
         path: '/preview/character/new',
@@ -45,7 +53,7 @@ export const campusGroups = [
     ],
   },
   {
-    title: 'Gestion',
+    title: 'Staff · simulation HRP',
     links: [
       { label: 'Espace staff', path: '/preview/staff', Icon: ClipboardCheck },
     ],
@@ -55,12 +63,23 @@ export const campusGroups = [
 export const campusDestinations = campusGroups.flatMap((group) => group.links);
 
 export function CampusNavigation({ onNavigate }: { onNavigate?: () => void }) {
+  const { activeCharacter, capacity } = useDemo();
+  const groups = campusGroups
+    .map(({ title, links }) => ({
+      title,
+      links: links.filter(
+        ({ path }) =>
+          canOpenCampusPath(path, activeCharacter?.type) &&
+          (path !== '/preview/character/new' || capacity.available > 0),
+      ),
+    }))
+    .filter(({ links }) => links.length > 0);
   return (
     <nav
       aria-label="Navigation du campus"
       className="campus-navigation demo-navigation"
     >
-      {campusGroups.map(({ title, links }) => (
+      {groups.map(({ title, links }) => (
         <div key={title}>
           <p className="nav-caption">{title}</p>
           <ul>

@@ -7,7 +7,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, Navigate, Outlet, useLocation } from 'react-router';
 
 import { Brand } from '@/components/common/brand';
 import { Disclaimer } from '@/components/common/disclaimer';
@@ -35,8 +35,10 @@ import {
   campusDestinations,
 } from '@/features/campus/campus-navigation';
 import { CampusSearch } from '@/features/campus/campus-search';
-import { findCharacter, findHouse, student } from '@/features/demo/data';
-import { useDemoRevision } from '@/features/demo/demo-state';
+import { canOpenCampusPath } from '@/features/campus/campus-access';
+import { findHouse } from '@/features/demo/catalogues';
+import { DemoHeading } from '@/features/demo/demo-ui';
+import { useDemo, useDemoRevision } from '@/features/demo/demo-state';
 import { ResetDemo } from '@/features/demo/reset-demo';
 import { ThemeSwitcher } from '@/features/theme/theme-switcher';
 
@@ -88,28 +90,35 @@ function MobileMenu() {
 }
 
 function AccountMenu() {
+  const { activeCharacter } = useDemo();
+  const label = activeCharacter?.name ?? 'Mes personnages';
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           className="account-trigger"
-          aria-label={`${student.name} · Personnage actif`}
+          aria-label={activeCharacter ? `${label} · Personnage actif` : label}
         >
           <span className="account-icon">
             <UserRound aria-hidden="true" />
           </span>
-          <span className="account-label">{student.name}</span>
+          <span className="account-label">{label}</span>
           <ChevronDown className="account-label" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Personnage actif</DropdownMenuLabel>
+        <DropdownMenuLabel>Compte fictif</DropdownMenuLabel>
         <DropdownMenuItem asChild>
-          <Link to="/preview/character">
-            <UserRound aria-hidden="true" /> Mon personnage
+          <Link to="/preview/characters">
+            <UserRound aria-hidden="true" /> Changer de personnage
           </Link>
         </DropdownMenuItem>
+        {activeCharacter && (
+          <DropdownMenuItem asChild>
+            <Link to="/preview/character">Voir le profil actif</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/login">
@@ -122,6 +131,7 @@ function AccountMenu() {
 }
 
 function CampusBreadcrumb({ pathname }: { pathname: string }) {
+  const { characters } = useDemo();
   const [, , section, id] = pathname.split('/');
   const destination = campusDestinations.find(({ path }) => path === pathname);
   const parent =
@@ -131,7 +141,10 @@ function CampusBreadcrumb({ pathname }: { pathname: string }) {
         ? ['Membres', '/preview/directory']
         : null;
   const house = section === 'houses' && id ? findHouse(id) : undefined;
-  const character = section === 'people' && id ? findCharacter(id) : undefined;
+  const character =
+    section === 'people' && id
+      ? characters.find((person) => person.id === id)
+      : undefined;
   const label =
     destination?.label ?? (house ? `${house.name} House` : character?.name);
   if (pathname === '/preview' || !label) return <span>Digital Campus</span>;
@@ -153,7 +166,9 @@ function CampusBreadcrumb({ pathname }: { pathname: string }) {
 export function CampusLayout() {
   const revision = useDemoRevision();
   const { pathname } = useLocation();
-  const route = pathname.replace(/\/+$/, '');
+  const route = pathname.replace(/\/+$/, '').toLowerCase();
+  const { activeCharacter } = useDemo();
+  const allowed = canOpenCampusPath(route, activeCharacter?.type);
   return (
     <div className="campus-layout">
       <SkipLink />
@@ -187,7 +202,25 @@ export function CampusLayout() {
           className="campus-main"
           data-section={route.split('/')[2] ?? 'home'}
         >
-          <Outlet key={revision} />
+          {allowed ? (
+            <Outlet key={revision} />
+          ) : route === '/preview' ? (
+            <Navigate to="/preview/characters" replace />
+          ) : (
+            <div className="demo-page">
+              <DemoHeading
+                title="Rubrique indisponible"
+                description={
+                  route === '/preview/ranking'
+                    ? 'Le classement est réservé aux étudiants validés.'
+                    : 'Activez un personnage validé pour accéder à cette rubrique.'
+                }
+              />
+              <Link className="text-link" to="/preview/characters">
+                Mes personnages
+              </Link>
+            </div>
+          )}
         </main>
         <footer className="campus-footer">
           <Disclaimer />

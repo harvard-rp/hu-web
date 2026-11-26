@@ -12,13 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  characters,
   clubs,
   clubCategories,
   findHouse,
   houses,
   majors,
-} from '@/features/demo/data';
+} from '@/features/demo/catalogues';
+import { useDemo } from '@/features/demo/demo-state';
 import {
   BackLink,
   CharacterLink,
@@ -43,6 +43,7 @@ function HouseMark({ house }: { house: House }) {
 }
 
 export function HousesPage() {
+  const { ranking } = useDemo();
   return (
     <div className="demo-page house-directory">
       <DemoHeading
@@ -66,7 +67,7 @@ export function HousesPage() {
             {houses
               .filter((house) => house.location === group)
               .map((house) => {
-                const count = characters.filter(
+                const count = ranking.filter(
                   (character) => character.house === house.id,
                 ).length;
                 return (
@@ -96,6 +97,7 @@ export function HousesPage() {
 
 export function HouseDetailPage() {
   const { houseId = '' } = useParams();
+  const { ranking } = useDemo();
   const house = findHouse(houseId);
   if (!house)
     return (
@@ -104,9 +106,7 @@ export function HouseDetailPage() {
         <DemoHeading title="House introuvable" />
       </div>
     );
-  const members = characters.filter(
-    (character) => character.house === house.id,
-  );
+  const members = ranking.filter((character) => character.house === house.id);
   return (
     <div className="demo-page house-detail-page">
       <div className="house-detail">
@@ -120,20 +120,14 @@ export function HouseDetailPage() {
         <header className="demo-panel-header">
           <h2 id="house-about">À propos</h2>
         </header>
-        {'summary' in house ? (
-          <div className="demo-panel-copy house-about">
-            <p>{house.summary}</p>
-            <ul aria-label="Caractéristiques" className="house-traits">
-              {house.traits.map((trait) => (
-                <li key={trait}>{trait}</li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p className="demo-panel-copy">
-            Présentation et caractéristiques RP à confirmer avec le staff.
-          </p>
-        )}
+        <div className="demo-panel-copy house-about">
+          <p>{house.summary}</p>
+          <ul aria-label="Caractéristiques" className="house-traits">
+            {house.traits.map((trait) => (
+              <li key={trait}>{trait}</li>
+            ))}
+          </ul>
+        </div>
       </section>
       <section className="demo-panel" aria-labelledby="house-members">
         <header className="demo-panel-header">
@@ -161,9 +155,10 @@ export function HouseDetailPage() {
 
 const clubIcons = {
   Sport: Dumbbell,
-  'Art et culture': Palette,
+  'Arts et culture': Palette,
   Académique: BookOpen,
-  'Loisirs et organisation': UsersRound,
+  Loisirs: UsersRound,
+  Organisation: UsersRound,
 };
 
 function ClubList({ entries }: { entries: typeof clubs }) {
@@ -178,18 +173,20 @@ function ClubList({ entries }: { entries: typeof clubs }) {
               <div>
                 <h3>{club.name}</h3>
                 <span className="demo-aside">{club.category}</span>
-                {club.provenance === 'to-confirm' && (
+                {club.provisional && (
                   <span className="club-pending">À confirmer</span>
                 )}
-                <p>{club.description}</p>
-                {club.note && <p className="club-note">{club.note}</p>}
+                {club.description && <p>{club.description}</p>}
+                {club.name === 'Natation' && (
+                  <p className="club-note">Type de responsable à confirmer.</p>
+                )}
               </div>
             </div>
             <dl className="club-facts">
               <div>
                 <dt>Effectif</dt>
                 <dd>
-                  {club.members}
+                  {club.members ?? '—'}
                   {club.capacity ? ` / ${club.capacity}` : ''}
                 </dd>
               </div>
@@ -197,19 +194,15 @@ function ClubList({ entries }: { entries: typeof clubs }) {
                 <dt>Capacité</dt>
                 <dd>
                   {club.capacity ??
-                    (club.provenance === 'to-confirm'
+                    (club.provisional
                       ? 'À confirmer'
-                      : 'Illimitée')}
+                      : 'Aucun plafond communiqué')}
                 </dd>
               </div>
               <div>
-                <dt>Responsable</dt>
-                <dd>
-                  {club.leader ??
-                    (club.name === 'Natation'
-                      ? 'À confirmer'
-                      : 'Non renseigné')}
-                </dd>
+                <dt>Responsabilité</dt>
+                <dd>{club.leadership}</dd>
+                {club.leader && <dd>{club.leader} (fictif)</dd>}
               </div>
             </dl>
           </li>
@@ -226,15 +219,13 @@ export function ClubsPage() {
   const matches = clubs.filter(
     (club) =>
       (!category || club.category === category) &&
-      normalizeSearch(`${club.name} ${club.description}`).includes(query),
+      normalizeSearch(`${club.name} ${club.description ?? ''}`).includes(query),
   );
-  const documented = matches.filter((club) => club.provenance !== 'sample');
-  const samples = matches.filter((club) => club.provenance === 'sample');
   return (
     <div className="demo-page">
       <DemoHeading
         title="Clubs"
-        description="Catalogue partiel. Effectifs et responsables fictifs."
+        description="Effectifs et responsables affichés à titre fictif."
       />
       <div className="demo-filters">
         <div>
@@ -264,23 +255,7 @@ export function ClubsPage() {
       <p role="status" className="demo-aside">
         {matches.length} {matches.length === 1 ? 'club' : 'clubs'}
       </p>
-      {documented.length > 0 && (
-        <section aria-labelledby="catalogue-clubs">
-          <h2 id="catalogue-clubs" className="directory-group-title">
-            Catalogue
-          </h2>
-          <ClubList entries={documented} />
-        </section>
-      )}
-      {samples.length > 0 && (
-        <section aria-labelledby="sample-clubs">
-          <h2 id="sample-clubs" className="directory-group-title">
-            Exemples fictifs
-          </h2>
-          <ClubList entries={samples} />
-        </section>
-      )}
-      {!matches.length && <NoResults />}
+      {matches.length ? <ClubList entries={matches} /> : <NoResults />}
     </div>
   );
 }

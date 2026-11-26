@@ -9,7 +9,8 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { findHouse, type Character } from './data';
+import { characterTypes, type Character } from './characters';
+import { findHouse } from './catalogues';
 
 export function DemoHeading({
   title,
@@ -51,7 +52,13 @@ export function CharacterLink({
       <Avatar character={character} />
       <span>
         {character.name}
-        {showHouse && <small>{findHouse(character.house)?.name} House</small>}
+        {showHouse && (
+          <small>
+            {character.type === 'student'
+              ? `${findHouse(character.house)?.name} House`
+              : characterTypes[character.type]}
+          </small>
+        )}
       </span>
     </Link>
   );

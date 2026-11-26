@@ -15,7 +15,11 @@
 | `src/styles/`          | Semantic tokens, global styles and page styles.                         |
 | `tests/`               | React Testing Library and simulated HTTP coverage.                      |
 
-The local demo state holds posts, comments, reactions, event participation and a staff review queue. Refresh or reset restores the fixtures. The form accepts fictional student and non-student dossiers. House assignment is an explicit staff simulation. Ranking values are fixed fixtures, and staff review updates only the demo queue.
+The local demo state holds a fictional account, review records, an optional active character, confirmed boost count, posts and comments. Reactions and event participation are keyed by character. Public profiles are derived from the accepted records and the seeded campus directory. Refresh or reset restores the fixtures.
+
+The demo has five base slots and one additional slot per confirmed boost. Pending, correction, accepted and suspended records count toward capacity here. Rejected records remain readable and release a slot. Boost changes update capacity without altering existing records or the active selection. An account with excess records cannot add new ones and can still resubmit an existing correction. These counting choices model demo behavior while final rules remain open.
+
+Course and club fields are presented for student fiches in the demo. A student requires a House assigned in the staff simulation before acceptance. Ranking includes accepted students and the seeded student directory. Other validated characters retain community access. Campus navigation, search and direct routes derive their presentation from the active character. Account tracking and HRP staff simulation remain available without an active character. This public simulation has no authorization boundary.
 
 The HTTP client remains available for later integration. Demo state has no production transport and the campus footer shows standalone status. Theme persistence uses its own browser storage key.
 

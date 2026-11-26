@@ -8,12 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  events,
-  findCharacter,
-  student,
-  type DemoPost,
-} from '@/features/demo/data';
+import { events, type DemoPost } from '@/features/demo/data';
 import { useDemo } from '@/features/demo/demo-state';
 import {
   Avatar,
@@ -23,11 +18,11 @@ import {
 } from '@/features/demo/demo-ui';
 
 function PostCard({ post }: { post: DemoPost }) {
-  const { likes, toggleLike, addComment } = useDemo();
+  const { likes, likeCount, toggleLike, addComment, characters } = useDemo();
   const [open, setOpen] = useState(false);
   const [comment, setComment] = useState('');
   const commentsId = useId();
-  const author = findCharacter(post.authorId);
+  const author = characters.find(({ id }) => id === post.authorId);
   if (!author) return null;
   const liked = likes.includes(post.id);
 
@@ -77,7 +72,7 @@ function PostCard({ post }: { post: DemoPost }) {
           onClick={() => toggleLike(post.id)}
         >
           <Heart aria-hidden="true" fill={liked ? 'currentColor' : 'none'} />{' '}
-          J’aime <span>{post.likes + Number(liked)}</span>
+          J’aime <span>{post.likes + likeCount(post.id)}</span>
         </Button>
         <Button
           type="button"
@@ -95,7 +90,9 @@ function PostCard({ post }: { post: DemoPost }) {
           <ul>
             {post.comments.map((entry) => (
               <li key={entry.id}>
-                <strong>{findCharacter(entry.authorId)?.name}</strong>
+                <strong>
+                  {characters.find(({ id }) => id === entry.authorId)?.name}
+                </strong>
                 <p>{entry.text}</p>
               </li>
             ))}
@@ -123,10 +120,11 @@ function PostCard({ post }: { post: DemoPost }) {
 }
 
 export function SocialPage() {
-  const { posts, addPost } = useDemo();
+  const { posts, addPost, activeCharacter, characters } = useDemo();
   const [post, setPost] = useState('');
+  if (!activeCharacter) return null;
   const authors = [...new Set(posts.map((item) => item.authorId))].filter(
-    (id) => id !== student.id,
+    (id) => id !== activeCharacter.id,
   );
   function publish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,9 +140,9 @@ export function SocialPage() {
         <div className="social-feed">
           <form onSubmit={publish} className="demo-panel social-composer">
             <div className="post-author">
-              <Avatar character={student} />
+              <Avatar character={activeCharacter} />
               <div>
-                <strong>{student.name}</strong>
+                <strong>{activeCharacter.name}</strong>
                 <p className="demo-aside">Votre personnage</p>
               </div>
             </div>
@@ -180,7 +178,9 @@ export function SocialPage() {
             </header>
             <ul className="demo-panel-list">
               {authors.map((id) => {
-                const person = findCharacter(id);
+                const person = characters.find(
+                  (character) => character.id === id,
+                );
                 return person ? (
                   <li key={id}>
                     <CharacterLink character={person} />

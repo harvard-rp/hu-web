@@ -61,15 +61,16 @@ describe('Campus catalogues', () => {
     expect(screen.getByText('À confirmer', { selector: 'span' })).toBeVisible();
     await user.selectOptions(
       screen.getByLabelText('Catégorie'),
-      'Loisirs et organisation',
+      'Organisation',
     );
     expect(screen.getByRole('heading', { name: 'BDE' })).toBeVisible();
     expect(screen.getByText('8 / 10')).toBeVisible();
+    expect(screen.getByText('Présidence')).toBeVisible();
+    await user.selectOptions(screen.getByLabelText('Catégorie'), 'Loisirs');
+    expect(screen.getByRole('heading', { name: 'Jeux vidéo' })).toBeVisible();
     expect(
-      within(
-        screen.getByRole('region', { name: 'Exemples fictifs' }),
-      ).getByRole('heading', { name: 'Table de jeux' }),
-    ).toBeVisible();
+      screen.queryByRole('heading', { name: 'BDE' }),
+    ).not.toBeInTheDocument();
   });
 
   it('lists the fifteen initial majors and lets the user propose one in a student dossier', async () => {
@@ -158,8 +159,11 @@ describe('Fictional interactions', () => {
       within(review).getByRole('button', { name: 'Enregistrer la House' }),
     );
     await user.click(within(review).getByRole('button', { name: 'Accepter' }));
-    expect(screen.getByText('Acceptée', { selector: 'span' })).toBeVisible();
-    expect(screen.getByText('Étudiant · Cabot House')).toBeVisible();
+    const accepted = screen
+      .getByRole('heading', { name: 'Épure Fictive' })
+      .closest('li')!;
+    expect(within(accepted).getByText('Acceptée')).toBeVisible();
+    expect(within(accepted).getByText('Étudiant · Cabot House')).toBeVisible();
 
     await user.click(
       screen.getByRole('button', { name: 'Réinitialiser la démo' }),
@@ -188,9 +192,10 @@ describe('Fictional interactions', () => {
     await user.click(
       screen.getByRole('button', { name: 'Demander une correction' }),
     );
-    expect(
-      screen.getByText('Correction demandée', { selector: 'span' }),
-    ).toBeVisible();
+    const corrected = screen
+      .getByRole('heading', { name: 'Alma Verdier' })
+      .closest('li')!;
+    expect(within(corrected).getByText('Correction demandée')).toBeVisible();
 
     await user.click(
       screen.getByRole('button', { name: 'Consulter la fiche · Soren Finch' }),

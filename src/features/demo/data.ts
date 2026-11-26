@@ -1,126 +1,8 @@
-export const houses = [
-  {
-    id: 'adams',
-    name: 'Adams',
-    color: '#8d384a',
-    location: 'River Houses',
-    traits: ['Créativité', 'Indépendance', 'Ouverture d’esprit'],
-    summary:
-      'Adams réunit des personnages créatifs et indépendants qui aiment échanger autour des arts, de la littérature, du cinéma, du théâtre ou de la musique.',
-  },
-  {
-    id: 'cabot',
-    name: 'Cabot',
-    color: '#374d6a',
-    location: 'Quad Houses',
-  },
-  {
-    id: 'currier',
-    name: 'Currier',
-    color: '#356254',
-    location: 'Quad Houses',
-  },
-  {
-    id: 'dunster',
-    name: 'Dunster',
-    color: '#8a5136',
-    location: 'River Houses',
-  },
-  {
-    id: 'eliot',
-    name: 'Eliot',
-    color: '#525178',
-    location: 'River Houses',
-  },
-  {
-    id: 'kirkland',
-    name: 'Kirkland',
-    color: '#6a493d',
-    location: 'River Houses',
-  },
-  {
-    id: 'leverett',
-    name: 'Leverett',
-    color: '#3f5b74',
-    location: 'River Houses',
-  },
-  {
-    id: 'lowell',
-    name: 'Lowell',
-    color: '#4c4169',
-    location: 'River Houses',
-  },
-  {
-    id: 'mather',
-    name: 'Mather',
-    color: '#4a5b4a',
-    location: 'River Houses',
-  },
-  {
-    id: 'pforzheimer',
-    name: 'Pforzheimer',
-    color: '#705138',
-    location: 'Quad Houses',
-  },
-  {
-    id: 'quincy',
-    name: 'Quincy',
-    color: '#815344',
-    location: 'River Houses',
-  },
-  {
-    id: 'winthrop',
-    name: 'Winthrop',
-    color: '#3b5963',
-    location: 'River Houses',
-  },
-] as const;
+import { emptyDraft, type Review, type StudentCharacter } from './characters';
 
-export type HouseId = (typeof houses)[number]['id'];
-
-export const majors = [
-  'Droit',
-  'Médecine',
-  'Littérature',
-  'Psychologie',
-  'Sciences de l’ingénieur',
-  'Informatique',
-  'Biologie',
-  'Architecture',
-  'Art',
-  'Sport',
-  'Économie',
-  'Sciences sociales',
-  'Langues étrangères',
-  'Cinéma',
-  'Marketing',
-] as const;
-
-export type Character = {
-  id: string;
-  name: string;
-  initials: string;
-  house: HouseId;
-  major: (typeof majors)[number];
-  year: string;
-  points: number;
-  tone: string;
-  bio: string;
-};
-
-export const characters: readonly Character[] = [
+export const campusMembers: readonly StudentCharacter[] = [
   {
-    id: 'camille',
-    name: 'Camille Delorme',
-    initials: 'CD',
-    house: 'adams',
-    major: 'Littérature',
-    year: '2e année',
-    points: 840,
-    tone: 'berry',
-    bio: 'Camille étudie la littérature. Elle écrit des nouvelles et aide Nora à organiser les soirées de lecture. Elle travaille souvent à la bibliothèque avec Iris.',
-  },
-  {
+    type: 'student',
     id: 'ambrose',
     name: 'Ambrose Vale',
     initials: 'AV',
@@ -132,6 +14,7 @@ export const characters: readonly Character[] = [
     bio: 'Ambrose étudie le droit et participe aux ateliers d’éloquence. Il retrouve souvent Camille à la bibliothèque pour préparer les débats.',
   },
   {
+    type: 'student',
     id: 'nora',
     name: 'Nora Sorel',
     initials: 'NS',
@@ -143,6 +26,7 @@ export const characters: readonly Character[] = [
     bio: 'Nora organise des soirées de lecture à voix haute dans le Quad.',
   },
   {
+    type: 'student',
     id: 'milo',
     name: 'Milo Ashford',
     initials: 'MA',
@@ -154,6 +38,7 @@ export const characters: readonly Character[] = [
     bio: 'Milo tourne son premier court métrage pour un cours de cinéma. Il s’occupe aussi des inscriptions au BDE.',
   },
   {
+    type: 'student',
     id: 'jules',
     name: 'Jules Mercier',
     initials: 'JM',
@@ -165,6 +50,7 @@ export const characters: readonly Character[] = [
     bio: 'Jules passe ses après-midi à l’atelier. Pour son projet de troisième année, il répare un vieux projecteur avec Eden.',
   },
   {
+    type: 'student',
     id: 'iris',
     name: 'Iris Bellamy',
     initials: 'IB',
@@ -176,6 +62,7 @@ export const characters: readonly Character[] = [
     bio: 'Iris travaille sur une série de croquis du campus pour son cours d’art. Elle dessine souvent avec Camille.',
   },
   {
+    type: 'student',
     id: 'alex',
     name: 'Alex Rowan',
     initials: 'AR',
@@ -187,6 +74,7 @@ export const characters: readonly Character[] = [
     bio: 'Alex étudie la biologie et prend des permanences aux serres le jeudi.',
   },
   {
+    type: 'student',
     id: 'lea',
     name: 'Léa Wren',
     initials: 'LW',
@@ -198,6 +86,7 @@ export const characters: readonly Character[] = [
     bio: 'Léa s’entraîne tôt et organise une sortie course le samedi.',
   },
   {
+    type: 'student',
     id: 'ciel',
     name: 'Ciel Arden',
     initials: 'CA',
@@ -209,6 +98,7 @@ export const characters: readonly Character[] = [
     bio: 'Ciel étudie les langues étrangères et aide Nora à trouver des textes pour les soirées de lecture.',
   },
   {
+    type: 'student',
     id: 'remy',
     name: 'Rémy Locke',
     initials: 'RL',
@@ -220,8 +110,9 @@ export const characters: readonly Character[] = [
     bio: 'Rémy crée les affiches du BDE en parallèle de ses cours de marketing.',
   },
   {
+    type: 'student',
     id: 'sasha',
-    name: 'Sasha Grey',
+    name: 'Sasha Girard',
     initials: 'SG',
     house: 'lowell',
     major: 'Sciences sociales',
@@ -231,6 +122,7 @@ export const characters: readonly Character[] = [
     bio: 'Sasha prépare un mémoire sur la vie en résidence. Elle mène des entretiens avec des étudiants de première année.',
   },
   {
+    type: 'student',
     id: 'manon',
     name: 'Manon Birch',
     initials: 'MB',
@@ -242,6 +134,7 @@ export const characters: readonly Character[] = [
     bio: 'Pour son cours d’architecture, Manon relève les accès et les cheminements du Quad.',
   },
   {
+    type: 'student',
     id: 'eden',
     name: 'Eden Frost',
     initials: 'EF',
@@ -251,99 +144,6 @@ export const characters: readonly Character[] = [
     points: 450,
     tone: 'green',
     bio: 'Eden s’occupe du site du BDE et donne un coup de main à Jules à l’atelier.',
-  },
-];
-
-export const student = characters[0]!;
-export const findHouse = (id: string) =>
-  houses.find((house) => house.id === id);
-export const findCharacter = (id: string) =>
-  characters.find((character) => character.id === id);
-export const ranking = [...characters].sort((a, b) => b.points - a.points);
-
-export const clubCategories = [
-  'Sport',
-  'Art et culture',
-  'Académique',
-  'Loisirs et organisation',
-] as const;
-type ClubCategory = (typeof clubCategories)[number];
-
-type Club = {
-  name: string;
-  category: ClubCategory;
-  description: string;
-  members: number;
-  leader?: string;
-  capacity?: number;
-  provenance: 'documented' | 'to-confirm' | 'sample';
-  note?: string;
-};
-
-export const clubs: readonly Club[] = [
-  {
-    name: 'Natation',
-    category: 'Sport',
-    description: 'Entraînements en bassin et travail technique en groupe.',
-    members: 7,
-    provenance: 'documented',
-    note: 'Type de responsable à confirmer.',
-  },
-  {
-    name: 'Club de droit',
-    category: 'Académique',
-    description: 'Études de cas et débats autour du droit.',
-    members: 0,
-    provenance: 'to-confirm',
-    note: 'Le club figure dans les descriptions. Sa présence dans l’annuaire reste à confirmer.',
-  },
-  {
-    name: 'BDE',
-    category: 'Loisirs et organisation',
-    description:
-      'Le bureau des étudiants organise les rencontres et accompagne les projets des clubs.',
-    members: 8,
-    capacity: 10,
-    leader: 'Milo Ashford',
-    provenance: 'documented',
-  },
-  {
-    name: 'Atelier argentique',
-    category: 'Art et culture',
-    description: 'Prise de vue sur pellicule, développement et tirage.',
-    members: 9,
-    leader: 'Iris Bellamy',
-    provenance: 'sample',
-  },
-  {
-    name: 'Cercle des carnets',
-    category: 'Art et culture',
-    description: 'Séances d’écriture et relecture de textes en groupe.',
-    members: 6,
-    leader: 'Camille Delorme',
-    provenance: 'sample',
-  },
-  {
-    name: 'Observatoire du Quad',
-    category: 'Académique',
-    description: 'Observations du ciel et tenue d’un carnet de terrain.',
-    members: 5,
-    provenance: 'sample',
-  },
-  {
-    name: 'Course du matin',
-    category: 'Sport',
-    description: 'Sortie course le samedi matin, avec deux groupes d’allure.',
-    members: 11,
-    leader: 'Léa Wren',
-    provenance: 'sample',
-  },
-  {
-    name: 'Table de jeux',
-    category: 'Loisirs et organisation',
-    description: 'Jeux de société en salle commune le vendredi.',
-    members: 10,
-    provenance: 'sample',
   },
 ];
 
@@ -436,7 +236,7 @@ export const initialPosts: readonly DemoPost[] = [
   },
 ];
 
-export const relations = [
+export const fixtureRelations = [
   {
     characterId: 'iris',
     kind: 'Amitié',
@@ -454,54 +254,64 @@ export const relations = [
   },
 ] as const;
 
-export type CharacterDraft = {
-  name: string;
-  profile: 'student' | 'non-student';
-  identity: string;
-  personality: string;
-  appearance: string;
-  faceClaim: string;
-  major: string;
-  majorProposal: string;
-  academic: string;
-  story: string;
-  anecdotes: string;
-  relations: string;
-  warnings: string;
-};
-
-export type ReviewStatus = 'pending' | 'changes' | 'accepted' | 'rejected';
-export type Review = {
-  id: string;
-  draft: CharacterDraft;
-  status: ReviewStatus;
-  house?: HouseId;
-  note?: string;
-};
-
-export const emptyDraft: CharacterDraft = {
-  name: '',
-  profile: 'student',
-  identity: '',
-  personality: '',
-  appearance: '',
-  faceClaim: '',
-  major: '',
-  majorProposal: '',
-  academic: '',
-  story: '',
-  anecdotes: '',
-  relations: '',
-  warnings: '',
-};
-
 export const initialReviews: readonly Review[] = [
+  {
+    id: 'camille',
+    status: 'accepted',
+    house: 'adams',
+    studentDetails: { year: '2e année', points: 840 },
+    draft: {
+      ...emptyDraft,
+      name: 'Delorme',
+      firstName: 'Camille',
+      major: 'Littérature',
+      story:
+        'Camille étudie la littérature. Elle écrit des nouvelles et aide Nora à organiser les soirées de lecture. Elle travaille souvent à la bibliothèque avec Iris.',
+    },
+  },
+  {
+    id: 'theo',
+    status: 'accepted',
+    draft: {
+      ...emptyDraft,
+      name: 'Marchand',
+      firstName: 'Théo',
+      profile: 'professor',
+      role: 'Enseigne l’histoire contemporaine',
+      story: 'Théo prépare un cours sur les archives de la ville.',
+    },
+  },
+  {
+    id: 'maya',
+    status: 'accepted',
+    draft: {
+      ...emptyDraft,
+      name: 'Laurent',
+      firstName: 'Maya',
+      profile: 'employee',
+      role: 'Bibliothécaire',
+      story: 'Maya s’occupe du fonds local et du prêt en salle de lecture.',
+    },
+  },
+  {
+    id: 'sam',
+    status: 'accepted',
+    draft: {
+      ...emptyDraft,
+      name: 'Morel',
+      firstName: 'Sam',
+      profile: 'citizen',
+      role: 'Libraire',
+      story: 'Sam tient une petite librairie près du campus.',
+    },
+  },
   {
     id: 'review-alma',
     status: 'pending',
     draft: {
       ...emptyDraft,
-      name: 'Alma Verdier',
+      name: 'Verdier',
+      firstName: 'Alma',
       major: 'Architecture',
       personality: 'Observatrice et persévérante.',
       story:
@@ -513,11 +323,34 @@ export const initialReviews: readonly Review[] = [
     status: 'pending',
     draft: {
       ...emptyDraft,
-      name: 'Soren Finch',
-      profile: 'non-student',
+      name: 'Finch',
+      firstName: 'Soren',
+      profile: 'citizen',
       personality: 'Réservé et attentif.',
       story:
         'Soren fait partie du collectif de quartier et prépare sa prochaine réunion.',
+    },
+  },
+  {
+    id: 'review-lina',
+    status: 'changes',
+    note: 'Préciser pourquoi Lina a changé de filière.',
+    draft: {
+      ...emptyDraft,
+      name: 'Lenoir',
+      firstName: 'Lina',
+      major: 'Biologie',
+    },
+  },
+  {
+    id: 'review-arthur',
+    status: 'suspended',
+    house: 'winthrop',
+    draft: {
+      ...emptyDraft,
+      name: 'Rivière',
+      firstName: 'Arthur',
+      major: 'Économie',
     },
   },
 ];

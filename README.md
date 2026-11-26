@@ -13,6 +13,8 @@ pnpm dev
 
 Open the Vite URL, normally `http://localhost:5173`. The prototype lives under `/preview`. It includes student and staff views, university catalogues, character creation, a directory, ranking, social feed, relationships and an agenda. Sign-in information is available at `/login`.
 
+Open **Mes personnages** to switch to a validated character, check the five base slots and boost bonuses, or track a fiche. **Espace staff** is a separate HRP simulation for reviewing fiches, assigning Houses to students and changing the confirmed boost count. The campus ranking is student-only.
+
 Demo actions live in the current tab's memory. Use **Réinitialiser la démo** in the campus footer to discard them and restore the sample data. Reloading the page also restores the sample data. Theme preference is stored independently in the browser. Enter fictional content only.
 
 | Command                             | Purpose                                                           |

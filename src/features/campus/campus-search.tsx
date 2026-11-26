@@ -19,7 +19,9 @@ import {
 } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useDemo } from '@/features/demo/demo-state';
 import { normalizeSearch } from '@/features/demo/demo-ui';
+import { canOpenCampusPath } from './campus-access';
 import { campusDestinations } from './campus-navigation';
 
 const searchableDestinations = [
@@ -32,8 +34,12 @@ export function CampusSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const focusTarget = useRef<string | null>(null);
-  const sections = searchableDestinations.filter(({ label }) =>
-    normalizeSearch(label).includes(normalizeSearch(query)),
+  const { activeCharacter, capacity } = useDemo();
+  const sections = searchableDestinations.filter(
+    ({ label, path }) =>
+      canOpenCampusPath(path, activeCharacter?.type) &&
+      (path !== '/preview/character/new' || capacity.available > 0) &&
+      normalizeSearch(label).includes(normalizeSearch(query)),
   );
 
   function changeOpen(next: boolean) {
@@ -97,9 +103,7 @@ export function CampusSearch() {
           <Empty className="p-4 md:p-4" role="status">
             <EmptyHeader>
               <EmptyTitle>Aucune rubrique trouvée</EmptyTitle>
-              <EmptyDescription>
-                Essayez « Houses », « Agenda » ou « Journal ».
-              </EmptyDescription>
+              <EmptyDescription>Essayez un autre nom.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         )}

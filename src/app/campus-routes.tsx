@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router';
 
+import { AccountPage } from '@/routes/account-page';
 import { CampusLayout } from '@/components/layout/campus-layout';
 import {
   ClubsPage,
@@ -29,6 +30,7 @@ export default function CampusRoutes() {
         <Route path="clubs" element={<ClubsPage />} />
         <Route path="majors" element={<MajorsPage />} />
         <Route path="character" element={<CharacterPage own />} />
+        <Route path="characters" element={<AccountPage />} />
         <Route path="character/new" element={<CharacterWizardPage />} />
         <Route path="people/:characterId" element={<CharacterPage />} />
         <Route path="directory" element={<DirectoryPage />} />
