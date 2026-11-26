@@ -29,3 +29,9 @@ Use a specific Vite mode with base `/hu-web/` and a HashRouter so direct Pages s
 Keep the existing routes, in-memory interactions and static build modes. Use a neutral Instrument Sans workspace with a compact navigation shell and module-specific document structures. Put technical status in the footer. Keep the home photograph outside the campus dashboard.
 
 Use licensed local photography with attribution and original House monograms. Preserve known RP facts and visually separate sample club records from the incomplete server catalogue. Unknown House profiles show an explicit missing-data state. The [demo source register](DEMO_SOURCES.md) records the references and rights.
+
+## HU-006C · Server catalogues and character context
+
+Use the RP summaries, majors and confirmed club roster from the owner-provided brief. Preserve unresolved club entries and leadership labels, original House monograms, and the original worksheet credit in the [source register](DEMO_SOURCES.md).
+
+Derive active profiles, display permissions, ranking, and capacity from tab-local records. Keep staff simulation independent of character type, and require staff House assignment before student validation. Let the account show and correct filings before activation. Treat slot accounting, access to read-only catalogues and student-only academic fields as demonstration choices while production rules are defined. Reputation categories remain descriptive and carry no scoring formula.

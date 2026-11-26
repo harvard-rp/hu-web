@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -10,30 +10,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { findHouse, houses, type HouseId } from '@/features/demo/catalogues';
 import {
-  findHouse,
-  houses,
-  type HouseId,
+  characterTypes,
+  draftName,
+  reviewStatusLabels,
   type Review,
-  type ReviewStatus,
-} from '@/features/demo/data';
-import { useDemo } from '@/features/demo/demo-state';
+  type ReviewDecision,
+} from '@/features/demo/characters';
+import { useDemo, validBoostCount } from '@/features/demo/demo-state';
 import { DemoHeading, NoResults } from '@/features/demo/demo-ui';
 import { DraftSummary } from './character-wizard-page';
-
-const statusLabels: Record<ReviewStatus, string> = {
-  pending: 'En attente',
-  changes: 'Correction demandée',
-  accepted: 'Acceptée',
-  rejected: 'Refusée',
-};
 
 function ReviewDialog({ record }: { record: Review }) {
   const [open, setOpen] = useState(false);
   const [house, setHouse] = useState<HouseId | ''>(record.house ?? '');
   const [note, setNote] = useState(record.note ?? '');
   const { assignHouse, review } = useDemo();
+  const name = draftName(record.draft);
+  const needsHouse = record.draft.profile === 'student' && !house;
 
   function handleOpen(next: boolean) {
     if (next) {
@@ -43,7 +40,7 @@ function ReviewDialog({ record }: { record: Review }) {
     setOpen(next);
   }
 
-  function decide(status: Exclude<ReviewStatus, 'pending'>) {
+  function decide(status: ReviewDecision) {
     review(
       record.id,
       status,
@@ -51,22 +48,19 @@ function ReviewDialog({ record }: { record: Review }) {
       note.trim() || undefined,
     );
     setOpen(false);
-    toast.success(statusLabels[status]);
+    toast.success(reviewStatusLabels[status]);
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          aria-label={`Consulter la fiche · ${record.draft.name}`}
-        >
+        <Button variant="outline" aria-label={`Consulter la fiche · ${name}`}>
           Consulter
         </Button>
       </DialogTrigger>
       <DialogContent className="demo-review-dialog">
         <DialogHeader>
-          <DialogTitle>{record.draft.name}</DialogTitle>
+          <DialogTitle>{name}</DialogTitle>
           <DialogDescription>
             Les décisions restent dans cette session.
           </DialogDescription>
@@ -118,6 +112,11 @@ function ReviewDialog({ record }: { record: Review }) {
                 onChange={(event) => setNote(event.target.value)}
               />
             </div>
+            {needsHouse && (
+              <p className="demo-aside">
+                Attribuez une House pour valider la fiche étudiante.
+              </p>
+            )}
             <div className="staff-actions">
               <Button
                 type="button"
@@ -133,14 +132,18 @@ function ReviewDialog({ record }: { record: Review }) {
               >
                 Refuser
               </Button>
-              <Button type="button" onClick={() => decide('accepted')}>
+              <Button
+                type="button"
+                onClick={() => decide('accepted')}
+                disabled={needsHouse}
+              >
                 Accepter
               </Button>
             </div>
           </div>
         ) : (
           <div className="demo-field">
-            <strong>{statusLabels[record.status]}</strong>
+            <strong>{reviewStatusLabels[record.status]}</strong>
             {record.house && (
               <p>House attribuée : {findHouse(record.house)?.name}</p>
             )}
@@ -152,18 +155,71 @@ function ReviewDialog({ record }: { record: Review }) {
   );
 }
 
+function BoostControls() {
+  const { boosts, setBoosts, capacity } = useDemo();
+  const [input, setInput] = useState(String(boosts));
+  const value = Number(input);
+  const valid = input.trim() !== '' && validBoostCount(value);
+
+  function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!valid) return;
+    setBoosts(value);
+    toast.success('Boosts confirmés mis à jour');
+  }
+
+  return (
+    <section className="demo-panel" aria-labelledby="staff-boosts">
+      <header className="demo-panel-header">
+        <h2 id="staff-boosts">Boosts du compte fictif</h2>
+      </header>
+      <div className="demo-panel-copy boost-controls">
+        <form onSubmit={save}>
+          <div className="demo-field">
+            <Label htmlFor="confirmed-boosts">Boosts confirmés</Label>
+            <Input
+              type="number"
+              id="confirmed-boosts"
+              min={0}
+              step={1}
+              required
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={!valid || value === boosts}
+          >
+            Enregistrer les boosts
+          </Button>
+        </form>
+        <p className="demo-aside" role="status">
+          {capacity.used} / {capacity.total} emplacements utilisés
+          {capacity.over > 0 &&
+            ` · ${capacity.over} en trop, fiches conservées`}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function StaffPage() {
   const { reviews } = useDemo();
   const [status, setStatus] = useState('');
-  const visible = reviews.filter(
-    (record) => !status || record.status === status,
-  );
+  const visible = reviews
+    .filter((record) => !status || record.status === status)
+    .sort(
+      (a, b) => Number(b.status === 'pending') - Number(a.status === 'pending'),
+    );
   return (
     <div className="demo-page staff-page">
       <DemoHeading
         title="Espace staff"
-        description="Les décisions sont simulées et n’affectent aucun utilisateur réel."
+        description="Simulation HRP. Les décisions restent dans cette session."
       />
+      <BoostControls />
       <div className="demo-filters">
         <div>
           <Label htmlFor="staff-status">État des fiches</Label>
@@ -173,7 +229,7 @@ export function StaffPage() {
             onChange={(event) => setStatus(event.target.value)}
           >
             <option value="">Tous les états</option>
-            {Object.entries(statusLabels).map(([key, label]) => (
+            {Object.entries(reviewStatusLabels).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -198,18 +254,16 @@ export function StaffPage() {
             {visible.map((record) => (
               <li key={record.id}>
                 <div>
-                  <h3>{record.draft.name}</h3>
+                  <h3>{draftName(record.draft)}</h3>
                   <p>
-                    {record.draft.profile === 'student'
-                      ? 'Étudiant'
-                      : 'Non étudiant'}
+                    {characterTypes[record.draft.profile]}
                     {record.house
                       ? ` · ${findHouse(record.house)?.name} House`
                       : ''}
                   </p>
                 </div>
                 <span className="staff-status" data-status={record.status}>
-                  {statusLabels[record.status]}
+                  {reviewStatusLabels[record.status]}
                 </span>
                 <ReviewDialog record={record} />
               </li>
