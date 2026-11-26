@@ -15,3 +15,11 @@ Parse the public build-time API configuration once and centralize the request fl
 ## HU-006 · Reproducible verification
 
 Pin runtime packages, development packages and pnpm. TypeScript 6.0 is within the supported range of the pinned TypeScript ESLint tooling. GitHub Actions checks formatting, lint, types, tests and the static build with repository contents read permission.
+
+## HU-006A · In-memory public demo
+
+Keep the public prototype in the existing SPA and reuse its primitive components and palette. Store sample actions in memory for the browser tab. Refresh and explicit reset restore the fixtures. The static catalogues mark unconfirmed or fictional entries and the staff queue models review steps without permission or persistence rules.
+
+## HU-006A · Temporary project Pages build
+
+Use a specific Vite mode with base `/hu-web/` and a HashRouter so direct Pages share links work on a plain static host. The regular build keeps browser history routing. Push and manual Pages deployments are restricted to `main`. Job permissions separate source reads from artifact deployment. The CI job runs both build variants for review branches.

@@ -12,9 +12,9 @@ import {
 import { useTheme, type ThemePreference } from './theme-provider';
 
 const options = [
-  { value: 'light', label: 'Light', Icon: Sun },
-  { value: 'dark', label: 'Dark', Icon: Moon },
-  { value: 'system', label: 'System', Icon: Monitor },
+  { value: 'light', label: 'Clair', Icon: Sun },
+  { value: 'dark', label: 'Sombre', Icon: Moon },
+  { value: 'system', label: 'Système', Icon: Monitor },
 ] satisfies { value: ThemePreference; label: string; Icon: typeof Sun }[];
 
 export function ThemeSwitcher() {
@@ -28,14 +28,14 @@ export function ThemeSwitcher() {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Appearance"
+          aria-label="Apparence"
           className="icon-button"
         >
           <ThemeIcon aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuLabel>Apparence</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={preference}
           onValueChange={(value) => {

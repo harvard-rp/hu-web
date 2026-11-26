@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import './tokens.css';
 @import './pages.css';
+@import './demo.css';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, Search } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, Megaphone, Search } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { Button } from '@/components/ui/button';
@@ -19,13 +19,20 @@ import {
 } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { previewSections } from './campus-navigation';
+import { normalizeSearch } from '@/features/demo/demo-ui';
+import { campusDestinations } from './campus-navigation';
+
+const searchableDestinations = [
+  ...campusDestinations,
+  { label: 'Annonces', path: '/preview#announcements', Icon: Megaphone },
+  { label: 'Événements', path: '/preview#events', Icon: CalendarDays },
+];
 
 export function CampusSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const sections = previewSections.filter(({ label }) =>
-    label.toLowerCase().includes(query.trim().toLowerCase()),
+  const sections = searchableDestinations.filter(({ label }) =>
+    normalizeSearch(label).includes(normalizeSearch(query)),
   );
 
   function changeOpen(next: boolean) {
@@ -40,20 +47,20 @@ export function CampusSearch() {
           variant="ghost"
           size="icon"
           className="icon-button"
-          aria-label="Search campus"
+          aria-label="Rechercher sur le campus"
         >
           <Search aria-hidden="true" />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Search campus</DialogTitle>
+          <DialogTitle>Rechercher sur le campus</DialogTitle>
           <DialogDescription>
-            Find a section in the public preview.
+            Accéder rapidement à une rubrique de la démonstration.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
-          <Label htmlFor="campus-search">Section name</Label>
+          <Label htmlFor="campus-search">Nom de la rubrique</Label>
           <Input
             id="campus-search"
             value={query}
@@ -61,11 +68,11 @@ export function CampusSearch() {
           />
         </div>
         {sections.length ? (
-          <ul className="grid gap-1">
-            {sections.map(({ id, label, Icon }) => (
-              <li key={id}>
+          <ul className="grid max-h-64 gap-1 overflow-y-auto">
+            {sections.map(({ path, label, Icon }) => (
+              <li key={path}>
                 <Link
-                  to={`/preview#${id}`}
+                  to={path}
                   onClick={() => changeOpen(false)}
                   className="search-result"
                 >
@@ -78,9 +85,9 @@ export function CampusSearch() {
         ) : (
           <Empty className="p-4 md:p-4" role="status">
             <EmptyHeader>
-              <EmptyTitle>No matching sections</EmptyTitle>
+              <EmptyTitle>Aucune rubrique trouvée</EmptyTitle>
               <EmptyDescription>
-                Try Dashboard, Announcements or Events.
+                Essayez « Houses », « Agenda » ou « Journal ».
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

@@ -20,62 +20,65 @@ describe('Public campus routes', () => {
   it('presents the Digital Campus as an independent roleplay community', () => {
     renderRoute();
     expect(
-      screen.getByRole('heading', { level: 1, name: 'The Digital Campus.' }),
+      screen.getByRole('heading', { level: 1, name: 'Digital Campus.' }),
     ).toBeVisible();
     expect(
-      screen.getByText(/no affiliation with Harvard University/i),
+      screen.getByText(/sans affiliation avec Harvard University/i),
     ).toBeVisible();
     expect(
-      screen.getByRole('link', { name: 'Skip to content' }),
-    ).toHaveAttribute('href', '#main-content');
+      screen.getByRole('link', { name: 'Aller au contenu' }),
+    ).toHaveAttribute('href', '/#main-content');
   });
 
-  it('navigates to the development preview and leaves future features unavailable', async () => {
+  it('navigates to the demonstration and exposes the sample module routes', async () => {
     const user = userEvent.setup();
     renderRoute();
-    await user.click(screen.getByRole('link', { name: 'Explore campus' }));
+    await user.click(screen.getByRole('link', { name: 'Entrer dans la démo' }));
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Welcome to campus.',
+        name: 'Bienvenue, Camille.',
       }),
     ).toBeVisible();
-    expect(screen.getByText('Development preview')).toBeVisible();
-    expect(screen.getByText('No announcements yet')).toBeVisible();
-    expect(screen.getByText('No events scheduled')).toBeVisible();
+    expect(screen.getByText('Mode démonstration')).toBeVisible();
+    expect(
+      screen.getByText('La bibliothèque prolonge ses horaires'),
+    ).toBeVisible();
+    expect(screen.getByText('Veillée de lecture')).toBeVisible();
     const nav = within(
-      screen.getByRole('navigation', { name: 'Campus navigation' }),
+      screen.getByRole('navigation', { name: 'Navigation du campus' }),
     );
-    expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+    expect(nav.getByRole('link', { name: 'Tableau de bord' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    expect(nav.getByText('My Character').parentElement).toHaveAttribute(
-      'aria-disabled',
-      'true',
+    expect(nav.getByRole('link', { name: 'Mon personnage' })).toHaveAttribute(
+      'href',
+      '/preview/character',
     );
-    expect(
-      nav.queryByRole('link', { name: /leaderboard/i }),
-    ).not.toBeInTheDocument();
+    expect(nav.getByRole('link', { name: 'Classement' })).toHaveAttribute(
+      'href',
+      '/preview/ranking',
+    );
   });
 
   it('shows Discord sign-in as unavailable and links to the preview', async () => {
     const user = userEvent.setup();
     renderRoute('/login');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Sign in to campus.' }),
+      screen.getByRole('heading', { level: 1, name: 'Connexion au campus.' }),
     ).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Continue with Discord' }),
+      screen.getByRole('button', { name: 'Continuer avec Discord' }),
     ).toBeDisabled();
     expect(
-      screen.getByText(/Discord sign-in is not available yet/i),
+      screen.getByText(/La connexion Discord est indisponible/i),
     ).toBeVisible();
     await user.click(
-      screen.getByRole('link', { name: 'Explore the public preview' }),
+      screen.getByRole('link', { name: 'Accéder à la démonstration' }),
     );
     expect(
-      await screen.findByRole('heading', { name: 'Welcome to campus.' }),
+      await screen.findByRole('heading', { name: 'Bienvenue, Camille.' }),
     ).toBeVisible();
   });
 
@@ -83,11 +86,11 @@ describe('Public campus routes', () => {
     const user = userEvent.setup();
     renderRoute('/unknown-place');
     expect(
-      screen.getByRole('heading', { name: 'Page not found.' }),
+      screen.getByRole('heading', { name: 'Page introuvable.' }),
     ).toBeVisible();
-    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await user.click(screen.getByRole('link', { name: 'Retour à l’accueil' }));
     expect(
-      screen.getByRole('heading', { name: 'The Digital Campus.' }),
+      screen.getByRole('heading', { name: 'Digital Campus.' }),
     ).toBeVisible();
   });
 
@@ -95,19 +98,21 @@ describe('Public campus routes', () => {
     const user = userEvent.setup();
     renderRoute('/preview');
     await user.click(
-      await screen.findByRole('button', { name: 'Search campus' }),
+      await screen.findByRole('button', { name: 'Rechercher sur le campus' }),
     );
-    const dialog = screen.getByRole('dialog', { name: 'Search campus' });
-    const input = within(dialog).getByRole('textbox', { name: 'Section name' });
-    await user.type(input, 'event');
+    const dialog = screen.getByRole('dialog', {
+      name: 'Rechercher sur le campus',
+    });
+    const input = within(dialog).getByRole('textbox', {
+      name: 'Nom de la rubrique',
+    });
+    await user.type(input, 'evenement');
     expect(
-      within(dialog).queryByRole('link', { name: 'Dashboard' }),
+      within(dialog).queryByRole('link', { name: 'Tableau de bord' }),
     ).not.toBeInTheDocument();
-    await user.click(within(dialog).getByRole('link', { name: 'Events' }));
+    await user.click(within(dialog).getByRole('link', { name: 'Événements' }));
     expect(dialog).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('region', { name: 'Upcoming events' }),
-    ).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Agenda' })).toBeVisible();
   });
 });
 
@@ -122,16 +127,16 @@ describe('Theme', () => {
   it('persists a manual dark choice and switches back to light', async () => {
     const user = userEvent.setup();
     const first = renderRoute();
-    await user.click(screen.getByRole('button', { name: 'Appearance' }));
-    await user.click(screen.getByRole('menuitemradio', { name: 'Dark' }));
+    await user.click(screen.getByRole('button', { name: 'Apparence' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Sombre' }));
     expect(localStorage.getItem('hu-theme')).toBe('dark');
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
 
     first.unmount();
     renderRoute();
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    await user.click(screen.getByRole('button', { name: 'Appearance' }));
-    await user.click(screen.getByRole('menuitemradio', { name: 'Light' }));
+    await user.click(screen.getByRole('button', { name: 'Apparence' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Clair' }));
     act(() => setSystemDark(true));
     expect(localStorage.getItem('hu-theme')).toBe('light');
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
@@ -144,10 +149,12 @@ describe('API connection feedback', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     renderRoute('/preview');
-    await user.click(await screen.findByRole('button', { name: 'API status' }));
-    expect(screen.getByText(/running in standalone mode/i)).toBeVisible();
+    await user.click(
+      await screen.findByRole('button', { name: 'État de l’API' }),
+    );
+    expect(screen.getByText(/Mode autonome/i)).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Check connection' }),
+      screen.queryByRole('button', { name: 'Vérifier la connexion' }),
     ).not.toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -174,10 +181,12 @@ describe('API connection feedback', () => {
         />
       </ThemeProvider>,
     );
-    await user.click(screen.getByRole('button', { name: 'API status' }));
-    await user.click(screen.getByRole('button', { name: 'Check connection' }));
+    await user.click(screen.getByRole('button', { name: 'État de l’API' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Vérifier la connexion' }),
+    );
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Connection check failed',
+      'Échec de la vérification',
     );
     expect(screen.getByText('request-test-123')).toBeVisible();
     expect(

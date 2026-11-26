@@ -1,43 +1,39 @@
-import { CalendarDays, Megaphone, Sparkles, Trophy } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Megaphone,
+  Shield,
+  Sparkles,
+  Trophy,
+} from 'lucide-react';
+import { Link } from 'react-router';
 
 import campusImage from '@/assets/campus-autumn.webp';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { Card } from '@/components/ui/card';
+import { announcements, events, ranking, student } from '@/features/demo/data';
 
-const indicators = [
+const stats = [
   {
+    label: 'Réputation',
+    value: student.points,
+    subtitle: 'Points fictifs',
+    path: '/preview/ranking',
     Icon: Sparkles,
-    label: 'Reputation',
-    detail: 'Character reputation will appear here.',
   },
   {
+    label: 'Classement',
+    value: `${ranking.indexOf(student) + 1}e`,
+    subtitle: 'Position de démonstration',
+    path: '/preview/ranking',
     Icon: Trophy,
-    label: 'Leaderboard',
-    detail: 'The campus rankings will appear here.',
-  },
-];
-
-const notices = [
-  {
-    id: 'announcements',
-    title: 'Announcements',
-    Icon: Megaphone,
-    empty: 'No announcements yet',
-    detail: 'Campus notices will be published here.',
   },
   {
-    id: 'events',
-    title: 'Upcoming events',
-    Icon: CalendarDays,
-    empty: 'No events scheduled',
-    detail: 'Future roleplay events will appear here.',
+    label: 'Ma House',
+    value: 'Adams',
+    subtitle: 'River Houses',
+    path: '/preview/houses/adams',
+    Icon: Shield,
   },
 ];
 
@@ -46,7 +42,7 @@ export function PreviewPage() {
     <div className="preview-page">
       <section
         id="overview"
-        className="preview-hero"
+        className="preview-hero demo-welcome"
         tabIndex={-1}
         aria-labelledby="preview-title"
       >
@@ -59,62 +55,90 @@ export function PreviewPage() {
         />
         <div className="preview-hero-copy">
           <Badge variant="outline" className="preview-label">
-            Development preview
+            Semestre d’automne
           </Badge>
-          <h1 id="preview-title">Welcome to campus.</h1>
+          <h1 id="preview-title">Bienvenue, Camille.</h1>
           <p>
-            Explore the layout of the future Digital Campus and see where campus
-            updates will live.
+            Adams House <span aria-hidden="true">·</span> Littérature{' '}
+            <span aria-hidden="true">·</span> 2e année
           </p>
+          <Link className="preview-profile" to="/preview/character">
+            Voir ma fiche <ArrowUpRight aria-hidden="true" />
+          </Link>
         </div>
       </section>
 
-      <div className="indicator-grid" aria-label="Future indicators">
-        {indicators.map(({ Icon, label, detail }) => (
-          <Card className="indicator-card" key={label}>
-            <CardHeader className="indicator-header">
-              <span className="indicator-icon">
+      <div className="dashboard-stats">
+        {stats.map(({ label, value, subtitle, path, Icon }) => (
+          <Card key={label} className="demo-card stat-card">
+            <Link to={path} className="stat-link">
+              <span className="stat-icon">
                 <Icon aria-hidden="true" />
               </span>
-              <h2>{label}</h2>
-              <Badge variant="outline" className="unavailable-chip">
-                Unavailable
-              </Badge>
-            </CardHeader>
-            <CardContent className="indicator-content">
-              <span aria-hidden="true" className="indicator-dash">
-                —
-              </span>
-              <p>{detail}</p>
-            </CardContent>
+              <span className="stat-label">{label}</span>
+              <strong>{value}</strong>
+              <small>{subtitle}</small>
+              <ArrowUpRight className="stat-arrow" aria-hidden="true" />
+            </Link>
           </Card>
         ))}
       </div>
 
-      <div className="notice-grid">
-        {notices.map(({ id, title, Icon, empty, detail }) => (
-          <section
-            id={id}
-            key={id}
-            tabIndex={-1}
-            aria-labelledby={`${id}-title`}
-          >
-            <Card className="notice-card">
-              <CardHeader className="notice-header">
-                <h2 id={`${id}-title`}>{title}</h2>
-              </CardHeader>
-              <Empty className="notice-empty">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <Icon aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyTitle>{empty}</EmptyTitle>
-                  <EmptyDescription>{detail}</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            </Card>
-          </section>
-        ))}
+      <div className="dashboard-columns">
+        <section
+          id="announcements"
+          tabIndex={-1}
+          aria-labelledby="announcements-title"
+          className="demo-panel"
+        >
+          <header className="demo-panel-header">
+            <span className="panel-icon">
+              <Megaphone aria-hidden="true" />
+            </span>
+            <h2 id="announcements-title">Annonces</h2>
+          </header>
+          <ul className="demo-panel-list">
+            {announcements.map(({ title, description, date }) => (
+              <li key={title}>
+                <p className="demo-date">{date}</p>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section
+          id="events"
+          tabIndex={-1}
+          aria-labelledby="events-title"
+          className="demo-panel"
+        >
+          <header className="demo-panel-header">
+            <span className="panel-icon">
+              <CalendarDays aria-hidden="true" />
+            </span>
+            <h2 id="events-title">Agenda</h2>
+            <Link to="/preview/agenda" className="text-link panel-action">
+              Voir l’agenda <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </header>
+          <ul className="demo-panel-list compact-events">
+            {events.map(({ id, title, day, month, datetime, time, place }) => (
+              <li key={id}>
+                <time className="date-tile" dateTime={datetime}>
+                  <strong>{day}</strong>
+                  <small>{month}</small>
+                </time>
+                <div>
+                  <h3>{title}</h3>
+                  <p>
+                    {time} · {place}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
     </div>
   );

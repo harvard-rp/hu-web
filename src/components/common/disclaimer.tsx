@@ -1,7 +1,7 @@
 export function Disclaimer() {
   return (
     <span>
-      Independent Discord roleplay community. No affiliation with Harvard
+      Communauté RP indépendante sur Discord, sans affiliation avec Harvard
       University.
     </span>
   );

@@ -2,6 +2,9 @@ import { ChevronDown, LogIn, Menu, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Outlet } from 'react-router';
 
+import { SkipLink } from '@/components/common/skip-link';
+import { ResetDemo } from '@/features/demo/reset-demo';
+import { useDemoRevision } from '@/features/demo/demo-state';
 import { Brand } from '@/components/common/brand';
 import { Disclaimer } from '@/components/common/disclaimer';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +39,7 @@ function MobileMenu() {
           variant="ghost"
           size="icon"
           className="icon-button"
-          aria-label="Open campus navigation"
+          aria-label="Ouvrir la navigation du campus"
         >
           <Menu aria-hidden="true" />
         </Button>
@@ -44,11 +47,11 @@ function MobileMenu() {
       <DialogContent className="mobile-menu-content">
         <DialogHeader>
           <DialogTitle>Digital Campus</DialogTitle>
-          <DialogDescription>Campus navigation</DialogDescription>
+          <DialogDescription>Navigation du campus</DialogDescription>
         </DialogHeader>
         <CampusNavigation onNavigate={() => setOpen(false)} />
         <Link className="sidebar-home" to="/" onClick={() => setOpen(false)}>
-          Return to public site
+          Retour à l’accueil
         </Link>
       </DialogContent>
     </Dialog>
@@ -62,21 +65,21 @@ function AccountMenu() {
         <Button
           variant="ghost"
           className="account-trigger"
-          aria-label="Guest account"
+          aria-label="Invité · Compte de démonstration"
         >
           <span className="guest-icon">
             <UserRound aria-hidden="true" />
           </span>
-          <span className="account-label">Guest</span>
+          <span className="account-label">Invité</span>
           <ChevronDown className="account-label" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Guest preview</DropdownMenuLabel>
+        <DropdownMenuLabel>Session de démonstration</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/login">
-            <LogIn aria-hidden="true" /> Sign-in information
+            <LogIn aria-hidden="true" /> Informations de connexion
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -85,16 +88,15 @@ function AccountMenu() {
 }
 
 export function CampusLayout() {
+  const revision = useDemoRevision();
   return (
     <div className="campus-layout">
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
-      <aside className="campus-sidebar" aria-label="Campus sidebar">
+      <SkipLink />
+      <aside className="campus-sidebar" aria-label="Barre latérale du campus">
         <Brand />
         <CampusNavigation />
         <Link className="sidebar-home" to="/">
-          Return to public site
+          Retour à l’accueil
         </Link>
       </aside>
 
@@ -106,7 +108,7 @@ export function CampusLayout() {
             </div>
             <span className="campus-header-title">Digital Campus</span>
             <Badge variant="outline" className="preview-chip">
-              Preview
+              Mode démonstration
             </Badge>
           </div>
           <div className="campus-header-actions">
@@ -117,12 +119,15 @@ export function CampusLayout() {
         </header>
 
         <main id="main-content" tabIndex={-1} className="campus-main">
-          <Outlet />
+          <Outlet key={revision} />
         </main>
 
         <footer className="campus-footer">
           <Disclaimer />
-          <ApiStatus />
+          <div className="demo-footer-actions">
+            <ApiStatus config={{ kind: 'disabled' }} />
+            <ResetDemo />
+          </div>
         </footer>
       </div>
     </div>

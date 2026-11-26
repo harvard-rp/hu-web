@@ -13,7 +13,7 @@ export function Brand() {
         </span>
         <small>Digital Campus</small>
       </span>
-      <span className="sr-only"> home</span>
+      <span className="sr-only"> · Accueil</span>
     </Link>
   );
 }
