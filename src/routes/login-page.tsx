@@ -17,15 +17,15 @@ export function LoginPage() {
     >
       <div className="login-content">
         <Link className="text-link login-back" to="/">
-          <ArrowLeft aria-hidden="true" /> Back to home
+          <ArrowLeft aria-hidden="true" /> Retour à l’accueil
         </Link>
         <span className="login-mark">
           <MessagesSquare aria-hidden="true" />
         </span>
-        <h1 id="login-title">Sign in to campus.</h1>
+        <h1 id="login-title">Connexion au campus.</h1>
         <p id="discord-status">
-          Campus accounts will use Discord. Discord sign-in is not available
-          yet.
+          Les futurs comptes utiliseront Discord. La connexion Discord est
+          indisponible.
         </p>
         <Button
           size="lg"
@@ -34,13 +34,13 @@ export function LoginPage() {
           aria-describedby="discord-status"
           className="discord-button"
         >
-          <LockKeyhole aria-hidden="true" /> Continue with Discord
+          <LockKeyhole aria-hidden="true" /> Continuer avec Discord
         </Button>
         <p className="login-status">
-          You can visit the public preview as a guest.
+          La démonstration est publique et accessible sans compte.
         </p>
         <Link className="text-link" to="/preview">
-          Explore the public preview <ArrowUpRight aria-hidden="true" />
+          Accéder à la démonstration <ArrowUpRight aria-hidden="true" />
         </Link>
       </div>
       <figure className="login-figure">

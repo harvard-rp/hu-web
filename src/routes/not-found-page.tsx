@@ -13,11 +13,11 @@ export function NotFoundPage() {
         <MapPinOff aria-hidden="true" />
       </span>
       <p className="eyebrow">404</p>
-      <h1 id="not-found-title">Page not found.</h1>
-      <p>We couldn’t find this part of campus.</p>
+      <h1 id="not-found-title">Page introuvable.</h1>
+      <p>Cette page ne fait pas partie du campus.</p>
       <Button asChild>
         <Link to="/">
-          <ArrowLeft aria-hidden="true" /> Back to home
+          <ArrowLeft aria-hidden="true" /> Retour à l’accueil
         </Link>
       </Button>
     </section>

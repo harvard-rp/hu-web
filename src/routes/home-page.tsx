@@ -3,7 +3,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   LayoutDashboard,
-  Megaphone,
+  Shield,
 } from 'lucide-react';
 import { Link } from 'react-router';
 
@@ -14,21 +14,21 @@ import { Card } from '@/components/ui/card';
 const campusLinks = [
   {
     Icon: LayoutDashboard,
-    title: 'Campus overview',
-    description: 'Take a first look at the student dashboard.',
+    title: 'Tableau de bord',
+    description: 'Ouvrez la session fictive de Camille Delorme.',
     href: '/preview',
   },
   {
-    Icon: Megaphone,
-    title: 'Announcements',
-    description: 'Visit the campus noticeboard.',
-    href: '/preview#announcements',
+    Icon: Shield,
+    title: 'Les Houses',
+    description: 'Découvrez les douze résidences du campus RP.',
+    href: '/preview/houses',
   },
   {
     Icon: CalendarDays,
-    title: 'Calendar',
-    description: 'See where upcoming RP events will appear.',
-    href: '/preview#events',
+    title: 'Agenda',
+    description: 'Parcourez les rendez-vous fictifs du campus.',
+    href: '/preview/agenda',
   },
 ];
 
@@ -37,35 +37,34 @@ export function HomePage() {
     <>
       <section className="home-hero content-shell" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <p className="eyebrow">Discord university roleplay</p>
+          <p className="eyebrow">Roleplay universitaire sur Discord</p>
           <h1 id="home-title" className="home-title">
-            The Digital <em>Campus.</em>
+            Digital <em>Campus.</em>
           </h1>
           <p className="hero-description">
-            Your home for Harvard University RP. Explore the campus, catch
-            university announcements, and see where the next chapter of your
-            roleplay will begin.
+            Incarnez un personnage fictif, découvrez les Houses et explorez la
+            vie étudiante dans le prototype de Harvard University RP.
           </p>
           <div className="hero-actions">
             <Button asChild size="lg">
               <Link to="/preview">
-                Explore campus <ArrowUpRight aria-hidden="true" />
+                Entrer dans la démo <ArrowUpRight aria-hidden="true" />
               </Link>
             </Button>
             <Link to="/login" className="text-link">
-              Sign in <ArrowRight aria-hidden="true" />
+              Connexion <ArrowRight aria-hidden="true" />
             </Link>
           </div>
         </div>
         <figure className="home-hero-figure">
           <img
             src={campusImage}
-            alt="Illustration of a red-brick university quadrangle framed by autumn trees"
+            alt="Cour universitaire fictive en briques rouges, bordée d’arbres d’automne"
             width={1260}
             height={945}
             fetchPriority="high"
           />
-          <figcaption>Fictional campus illustration</figcaption>
+          <figcaption>Illustration d’un campus fictif</figcaption>
         </figure>
       </section>
 
@@ -73,7 +72,7 @@ export function HomePage() {
         className="around-campus content-shell"
         aria-labelledby="around-title"
       >
-        <h2 id="around-title">Around campus</h2>
+        <h2 id="around-title">La vie sur le campus</h2>
         <div className="campus-link-grid">
           {campusLinks.map(({ Icon, title, description, href }) => (
             <Card className="campus-link-card" key={title}>

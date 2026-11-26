@@ -46,7 +46,7 @@ export function ApiStatus({ config = apiConfig }: { config?: ApiConfig }) {
       await createApiClient(config).health(controller.signal);
       if (controller.signal.aborted) return;
       setStatus({ kind: 'healthy' });
-      toast.success('API connection verified');
+      toast.success('Connexion à l’API vérifiée');
     } catch (error) {
       if (controller.signal.aborted) return;
       setStatus({
@@ -62,28 +62,27 @@ export function ApiStatus({ config = apiConfig }: { config?: ApiConfig }) {
     <Dialog onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" className="api-trigger">
-          <Activity aria-hidden="true" /> API status
+          <Activity aria-hidden="true" /> État de l’API
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>API connection</DialogTitle>
+          <DialogTitle>Connexion à l’API</DialogTitle>
           <DialogDescription>
-            Check whether the preview can reach hu-api.
+            Vérifiez si le campus peut joindre hu-api.
           </DialogDescription>
         </DialogHeader>
         {config.kind === 'disabled' && (
           <p className="text-sm text-muted-foreground">
-            The preview is running in standalone mode. An API connection is
-            optional.
+            Mode autonome. La démonstration ne contacte pas l’API.
           </p>
         )}
         {config.kind === 'invalid' && (
           <Alert variant="destructive">
             <CircleAlert aria-hidden="true" />
-            <AlertTitle>Invalid API configuration</AlertTitle>
+            <AlertTitle>Configuration API invalide</AlertTitle>
             <AlertDescription>
-              Review the configured API URL and timeout.
+              Vérifiez l’URL et le délai configurés.
             </AlertDescription>
           </Alert>
         )}
@@ -91,7 +90,7 @@ export function ApiStatus({ config = apiConfig }: { config?: ApiConfig }) {
           <div className="grid gap-4">
             {status.kind === 'loading' && (
               <div role="status" className="grid gap-2">
-                <span className="sr-only">Checking API connection</span>
+                <span className="sr-only">Vérification de la connexion</span>
                 <Skeleton className="h-4 w-3/4" aria-hidden="true" />
                 <Skeleton className="h-4 w-1/2" aria-hidden="true" />
               </div>
@@ -101,19 +100,30 @@ export function ApiStatus({ config = apiConfig }: { config?: ApiConfig }) {
                 className="flex items-center gap-2 text-sm text-success"
                 role="status"
               >
-                <CircleCheck aria-hidden="true" className="size-4" /> hu-api is
-                responding.
+                <CircleCheck aria-hidden="true" className="size-4" /> hu-api
+                répond.
               </p>
             )}
             {status.kind === 'error' && (
               <Alert variant="destructive">
                 <CircleAlert aria-hidden="true" />
-                <AlertTitle>Connection check failed</AlertTitle>
+                <AlertTitle>Échec de la vérification</AlertTitle>
                 <AlertDescription>
-                  <p>{status.error.message}</p>
+                  <p>
+                    {
+                      {
+                        unavailable: 'La connexion à l’API est indisponible.',
+                        timeout: 'L’API a mis trop de temps à répondre.',
+                        aborted: 'La requête a été annulée.',
+                        network: 'Impossible de joindre l’API.',
+                        http: 'L’API a retourné une erreur.',
+                        response: 'La réponse de l’API est inattendue.',
+                      }[status.error.kind]
+                    }
+                  </p>
                   {status.error.requestId && (
                     <p>
-                      Request ID{' '}
+                      Identifiant de requête{' '}
                       <code className="break-all">
                         {status.error.requestId}
                       </code>
@@ -128,7 +138,7 @@ export function ApiStatus({ config = apiConfig }: { config?: ApiConfig }) {
               disabled={status.kind === 'loading'}
               className="justify-self-start"
             >
-              Check connection
+              Vérifier la connexion
             </Button>
           </div>
         )}

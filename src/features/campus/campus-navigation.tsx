@@ -1,60 +1,81 @@
 import {
+  BookOpen,
   CalendarDays,
+  ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
-  LockKeyhole,
   MessagesSquare,
-  Settings,
+  Shield,
   Trophy,
+  UserPlus,
   UserRound,
   UsersRound,
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { NavLink } from 'react-router';
 
-const futureSections = [
-  { label: 'My Character', Icon: UserRound },
-  { label: 'Leaderboard', Icon: Trophy },
-  { label: 'Social', Icon: MessagesSquare },
-  { label: 'Relationships', Icon: UsersRound },
-  { label: 'University', Icon: GraduationCap },
-  { label: 'Calendar', Icon: CalendarDays },
-  { label: 'Settings', Icon: Settings },
+export const campusGroups = [
+  {
+    title: 'Vie étudiante',
+    links: [
+      { label: 'Tableau de bord', path: '/preview', Icon: LayoutDashboard },
+      { label: 'Mon personnage', path: '/preview/character', Icon: UserRound },
+      {
+        label: 'Créer une fiche',
+        path: '/preview/character/new',
+        Icon: UserPlus,
+      },
+      { label: 'Relations', path: '/preview/relations', Icon: UsersRound },
+    ],
+  },
+  {
+    title: 'Université',
+    links: [
+      { label: 'Houses', path: '/preview/houses', Icon: Shield },
+      { label: 'Clubs', path: '/preview/clubs', Icon: BookOpen },
+      { label: 'Filières', path: '/preview/majors', Icon: GraduationCap },
+      { label: 'Effectifs', path: '/preview/directory', Icon: UsersRound },
+    ],
+  },
+  {
+    title: 'Communauté',
+    links: [
+      { label: 'Classement', path: '/preview/ranking', Icon: Trophy },
+      { label: 'Journal RP', path: '/preview/social', Icon: MessagesSquare },
+      { label: 'Agenda', path: '/preview/agenda', Icon: CalendarDays },
+      { label: 'Espace staff', path: '/preview/staff', Icon: ClipboardCheck },
+    ],
+  },
 ];
 
-export const previewSections = [
-  { id: 'overview', label: 'Dashboard', Icon: LayoutDashboard },
-  { id: 'announcements', label: 'Announcements', Icon: MessagesSquare },
-  { id: 'events', label: 'Events', Icon: CalendarDays },
-];
+export const campusDestinations = campusGroups.flatMap((group) => group.links);
 
 export function CampusNavigation({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav aria-label="Campus navigation" className="campus-navigation">
-      <p className="nav-caption">Campus</p>
-      <ul>
-        <li>
-          <Link
-            to="/preview"
-            onClick={onNavigate}
-            aria-current="page"
-            className="campus-nav-link active"
-          >
-            <LayoutDashboard aria-hidden="true" /> Dashboard
-          </Link>
-        </li>
-        {futureSections.map(({ label, Icon }) => (
-          <li key={label}>
-            <span className="campus-nav-link unavailable" aria-disabled="true">
-              <Icon aria-hidden="true" />
-              <span>
-                {label}
-                <span className="sr-only"> · unavailable</span>
-              </span>
-              <LockKeyhole className="nav-lock" aria-hidden="true" />
-            </span>
-          </li>
-        ))}
-      </ul>
+    <nav
+      aria-label="Navigation du campus"
+      className="campus-navigation demo-navigation"
+    >
+      {campusGroups.map(({ title, links }) => (
+        <div key={title}>
+          <p className="nav-caption">{title}</p>
+          <ul>
+            {links.map(({ label, path, Icon }) => (
+              <li key={path}>
+                <NavLink
+                  end={path === '/preview' || path === '/preview/character'}
+                  to={path}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `campus-nav-link${isActive ? ' active' : ''}`
+                  }
+                >
+                  <Icon aria-hidden="true" /> {label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }

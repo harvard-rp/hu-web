@@ -1,14 +1,17 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
+import { BrowserRouter, HashRouter } from 'react-router';
 
 import { App } from '@/app/app';
 import '@/styles/index.css';
 
+const Router =
+  import.meta.env.MODE === 'github-pages' ? HashRouter : BrowserRouter;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <Router>
       <App />
-    </BrowserRouter>
+    </Router>
   </StrictMode>,
 );

@@ -34,3 +34,7 @@ The theme follows the system by default. Selecting Light, Dark or System stores 
 Keyboard users can use the skip link, follow routes and operate Radix dialogs and menus. Visible focus and reduced-motion preferences are supported. Decorative icons use `aria-hidden`; icon-only interactive controls carry accessible names.
 
 The shadcn/ui primitives use adapted registry source. [The upstream notice](SHADCN_NOTICE.txt) applies to those components.
+
+## HU-006A demo surfaces
+
+The campus preview adds a sticky demonstration label, compact editorial panels and responsive catalogue cards. House badges are neutral placeholders with individual semantic identities. Character avatars use initials. Use the original shared layout and tokens for new views. Staff and student form controls share input styles, anchored labels and keyboard focus states. See [the source register](DEMO_SOURCES.md) for asset provenance.
