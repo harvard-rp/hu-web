@@ -19,18 +19,20 @@ describe('Campus catalogues', () => {
   it('shows the twelve Houses and follows a detail and fictional character link', async () => {
     const user = openRoute('/preview/houses');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Les Houses' }),
+      await screen.findByRole('heading', { level: 1, name: 'Houses' }),
     ).toBeVisible();
     expect(
-      screen.getAllByRole('heading', { level: 2, name: /House$/ }),
+      screen.getAllByRole('heading', { level: 3, name: /House$/ }),
     ).toHaveLength(12);
-    await user.click(
-      screen.getByRole('link', { name: /Adams House.*Créativité/ }),
-    );
+    await user.click(screen.getByRole('link', { name: /Adams House/ }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Adams House' }),
     ).toBeVisible();
-    const members = screen.getByRole('region', { name: 'Membres fictifs' });
+    expect(
+      screen.getByRole('navigation', { name: 'Fil d’Ariane' }),
+    ).toHaveTextContent('Houses');
+    expect(screen.getByText('Ouverture d’esprit')).toBeVisible();
+    const members = screen.getByRole('region', { name: 'Membres' });
     await user.click(
       within(members).getByRole('link', { name: /Camille Delorme/ }),
     );
@@ -41,8 +43,10 @@ describe('Campus catalogues', () => {
 
   it('filters clubs by category and query, with one swimming entry and the BDE cap', async () => {
     const user = openRoute('/preview/clubs');
-    await screen.findByRole('heading', { name: 'Clubs du campus' });
-    const search = screen.getByRole('textbox', { name: 'Rechercher un club' });
+    await screen.findByRole('heading', { name: 'Clubs' });
+    const search = screen.getByRole('searchbox', {
+      name: 'Rechercher un club',
+    });
     await user.type(search, 'natation');
     expect(screen.getAllByRole('heading', { name: 'Natation' })).toHaveLength(
       1,
@@ -61,16 +65,23 @@ describe('Campus catalogues', () => {
     );
     expect(screen.getByRole('heading', { name: 'BDE' })).toBeVisible();
     expect(screen.getByText('8 / 10')).toBeVisible();
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Exemples fictifs' }),
+      ).getByRole('heading', { name: 'Table de jeux' }),
+    ).toBeVisible();
   });
 
   it('lists the fifteen initial majors and lets the user propose one in a student dossier', async () => {
     const user = openRoute('/preview/majors');
     await screen.findByRole('heading', { name: 'Filières' });
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(15);
+    expect(
+      within(screen.getByRole('main')).getAllByRole('listitem'),
+    ).toHaveLength(15);
     await user.click(
       screen.getByRole('link', { name: 'Proposer une filière' }),
     );
-    await screen.findByRole('heading', { name: 'Créer une fiche RP' });
+    await screen.findByRole('heading', { name: 'Créer un personnage' });
     await user.type(
       screen.getByLabelText('Nom du personnage (obligatoire)'),
       'Juniper Demo',
@@ -85,15 +96,28 @@ describe('Campus catalogues', () => {
 
   it('filters the directory by House and orders sample rankings by their stored points', async () => {
     const user = openRoute('/preview/directory');
-    await screen.findByRole('heading', { name: 'Effectifs universitaires' });
+    await screen.findByRole('heading', { name: 'Membres' });
     await user.selectOptions(screen.getByLabelText('House'), 'adams');
     expect(screen.getByText('2 personnages')).toBeVisible();
     expect(screen.queryByText('Ambrose Vale')).not.toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Classement' }));
-    const list = await screen.findByRole('list', { name: 'Classement' });
-    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent(
+    const table = await screen.findByRole('table', {
+      name: 'Classement de réputation',
+    });
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent(
       'Ambrose Vale',
     );
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Rechercher par nom ou House' }),
+      'adams',
+    );
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
+    const activeRow = within(table).getByRole('row', {
+      name: /Camille Delorme/,
+    });
+    expect(within(activeRow).getByRole('cell', { name: '4' })).toBeVisible();
+    expect(within(activeRow).getByText('Vous')).toBeVisible();
+    expect(within(table).queryByText('Ambrose Vale')).not.toBeInTheDocument();
   });
 });
 
@@ -115,14 +139,14 @@ describe('Fictional interactions', () => {
 
     expect(screen.getByText('Épure Fictive')).toBeVisible();
     await user.click(
-      screen.getByRole('button', { name: 'Soumettre la fiche fictive' }),
+      screen.getByRole('button', { name: 'Soumettre ma fiche' }),
     );
     await user.click(
-      screen.getByRole('link', { name: 'Ouvrir l’espace staff' }),
+      screen.getByRole('link', { name: 'Voir la file de validation' }),
     );
     await user.click(
       await screen.findByRole('button', {
-        name: 'Consulter la fiche de Épure Fictive',
+        name: 'Consulter la fiche · Épure Fictive',
       }),
     );
     const review = screen.getByRole('dialog', { name: 'Épure Fictive' });
@@ -154,7 +178,7 @@ describe('Fictional interactions', () => {
     const user = openRoute('/preview/staff');
     await user.click(
       await screen.findByRole('button', {
-        name: 'Consulter la fiche de Alma Verdier',
+        name: 'Consulter la fiche · Alma Verdier',
       }),
     );
     await user.type(
@@ -169,7 +193,7 @@ describe('Fictional interactions', () => {
     ).toBeVisible();
 
     await user.click(
-      screen.getByRole('button', { name: 'Consulter la fiche de Soren Finch' }),
+      screen.getByRole('button', { name: 'Consulter la fiche · Soren Finch' }),
     );
     expect(
       screen.queryByLabelText('Attribuer une House'),
@@ -186,9 +210,7 @@ describe('Fictional interactions', () => {
       await screen.findByLabelText('Publication RP'),
       'Un chapitre fictif au Quad.',
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Publier dans la démo' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
     const article = screen.getByRole('article', {
       name: 'Publication de Camille Delorme',
     });
@@ -215,16 +237,16 @@ describe('Fictional interactions', () => {
     const user = openRoute('/preview/agenda');
     await user.click(
       await screen.findByRole('button', {
-        name: 'Simuler l’inscription · Veillée de lecture',
+        name: 'S’inscrire · Veillée de lecture',
       }),
     );
     expect(
       screen.getByRole('button', {
-        name: 'Inscription simulée · Veillée de lecture',
+        name: 'Inscrit · Veillée de lecture',
       }),
     ).toHaveAttribute('aria-pressed', 'true');
     await user.click(
-      screen.getByRole('checkbox', { name: 'Mes inscriptions simulées' }),
+      screen.getByRole('checkbox', { name: 'Mes inscriptions' }),
     );
     expect(
       screen.getByRole('heading', { name: 'Veillée de lecture' }),

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -52,7 +51,7 @@ function ReviewDialog({ record }: { record: Review }) {
       note.trim() || undefined,
     );
     setOpen(false);
-    toast.success(`Décision simulée · ${statusLabels[status]}`);
+    toast.success(statusLabels[status]);
   }
 
   return (
@@ -60,18 +59,16 @@ function ReviewDialog({ record }: { record: Review }) {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          aria-label={`Consulter la fiche de ${record.draft.name}`}
+          aria-label={`Consulter la fiche · ${record.draft.name}`}
         >
           Consulter
-          <span className="sr-only"> la fiche de {record.draft.name}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="demo-review-dialog">
         <DialogHeader>
           <DialogTitle>{record.draft.name}</DialogTitle>
           <DialogDescription>
-            Fiche de démonstration. Les décisions restent dans cette session et
-            n’affectent aucun utilisateur réel.
+            Les décisions restent dans cette session.
           </DialogDescription>
         </DialogHeader>
         <DraftSummary draft={record.draft} />
@@ -100,7 +97,7 @@ function ReviewDialog({ record }: { record: Review }) {
                   onClick={() => {
                     if (house) {
                       assignHouse(record.id, house);
-                      toast.success('House attribuée dans la démonstration');
+                      toast.success('House attribuée');
                     }
                   }}
                   disabled={!house}
@@ -162,11 +159,10 @@ export function StaffPage() {
     (record) => !status || record.status === status,
   );
   return (
-    <div className="demo-page">
+    <div className="demo-page staff-page">
       <DemoHeading
-        section="Communauté"
         title="Espace staff"
-        description="Simulez la validation des fiches. Les décisions restent dans cette session et n’affectent aucun utilisateur réel."
+        description="Les décisions sont simulées et n’affectent aucun utilisateur réel."
       />
       <div className="demo-filters">
         <div>
@@ -189,10 +185,15 @@ export function StaffPage() {
         <section className="demo-panel" aria-labelledby="staff-queue">
           <header className="demo-panel-header">
             <h2 id="staff-queue">File de validation</h2>
-            <Badge variant="outline">
-              {visible.length} fiche{visible.length === 1 ? '' : 's'}
-            </Badge>
+            <span className="demo-aside" role="status">
+              {visible.length} {visible.length === 1 ? 'fiche' : 'fiches'}
+            </span>
           </header>
+          <div className="staff-columns" aria-hidden="true">
+            <span>Personnage</span>
+            <span>Statut</span>
+            <span>Fiche</span>
+          </div>
           <ul className="staff-list">
             {visible.map((record) => (
               <li key={record.id}>
@@ -207,14 +208,9 @@ export function StaffPage() {
                       : ''}
                   </p>
                 </div>
-                <Badge
-                  variant="outline"
-                  className={
-                    record.status === 'accepted' ? 'text-success' : undefined
-                  }
-                >
+                <span className="staff-status" data-status={record.status}>
                   {statusLabels[record.status]}
-                </Badge>
+                </span>
                 <ReviewDialog record={record} />
               </li>
             ))}

@@ -1,40 +1,25 @@
 # Design system
 
-The Digital Campus uses a restrained editorial layout inspired by university publishing. The brand uses an original text treatment and a Lucide landmark glyph. The campus image is generated artwork depicting a fictional location.
-
 ## Color and typography
 
-| Reference  | Color     | Purpose                                      |
-| ---------- | --------- | -------------------------------------------- |
-| Crimson    | `#A51C30` | Brand mark and public header rule.           |
-| Bordeaux   | `#581321` | Campus preview masthead.                     |
-| Ivory      | `#F5F1E8` | Light paper surfaces.                        |
-| Gold       | `#B39A68` | Brand reference for warm decorative accents. |
-| Anthracite | `#19191D` | Light foreground.                            |
+| Reference             | Color     | Purpose                                                            |
+| --------------------- | --------- | ------------------------------------------------------------------ |
+| Crimson               | `#A51C30` | Original RP mark, strong emphasis and light theme primary actions. |
+| Light background      | `#F5F5F5` | Page surfaces around the workspace.                                |
+| Light surface         | `#FFFFFF` | Header, sidebar, lists and cards.                                  |
+| Dark background       | `#111113` | Page surfaces around the workspace.                                |
+| Dark surface          | `#1B1B1F` | Header, sidebar, lists and cards.                                  |
+| Dark elevated surface | `#242428` | Menus, table heads, hover and secondary surfaces.                  |
+| Dark muted text       | `#B3B3B8` | Supporting labels and metadata.                                    |
 
-`src/styles/tokens.css` defines paired light and dark values for surfaces, foreground, muted text, input boundaries, action colors, status feedback and focus. Use a semantic foreground with its paired background. Use the warm rule for decorative borders. Controls use the input and focus colors to remain distinguishable from adjacent surfaces.
+`src/styles/tokens.css` pairs foregrounds, actions and focus colors with light and dark surfaces. Keep quiet borders separate from form and focus boundaries. Use Crimson selectively for identity and selected states. Preserve the contrast of status text and input boundaries.
 
-Newsreader is the editorial serif and Instrument Sans is the interface sans-serif. The Latin WOFF2 assets are served locally from their Fontsource packages under their respective SIL Open Font Licenses. Use real heading levels and allow text to wrap at narrow widths.
+Instrument Sans is the interface family. Newsreader is used for the public institutional title and monograms. The Latin WOFF2 files are served from the Fontsource packages under the SIL Open Font License.
 
-## Primitives and states
+## Layouts and components
 
-| Primitive              | Usage                                                             |
-| ---------------------- | ----------------------------------------------------------------- |
-| Button and link        | Primary actions, navigation and explicit unavailable sign-in.     |
-| Card and badge         | Campus destinations, preview status and unavailable indicators.   |
-| Input and label        | Search field for preview sections.                                |
-| Dialog                 | Mobile navigation, section search and API status.                 |
-| Dropdown menu          | Appearance choices and guest account information.                 |
-| Skeleton               | Lazy preview loading and a pending API check.                     |
-| Empty state            | Announcements, events and search results.                         |
-| Alert and notification | Inline API error and confirmation toast after a successful check. |
+The public layout pairs a single campus photograph with direct campus and sign-in links. The campus workspace uses a compact grouped sidebar, sticky header, active character menu and a modal drawer at mobile widths. The header shows breadcrumbs on nested campus routes and retains a permanent demo indicator. API status and reset are in the campus footer.
 
-The theme follows the system by default. Selecting Light, Dark or System stores the preference under `hu-theme`. The app follows live system changes while System is selected. An in-memory choice covers restricted storage.
+Tables preserve data relationships in the ranking. House catalogues use original monograms. Club and member directories use rows, the agenda is an ordered list, and the social feed uses dedicated post and composer layouts. The staff queue uses distinct management rows and a review dialog. Styles share surface and form tokens and use separate content widths for the main modules.
 
-Keyboard users can use the skip link, follow routes and operate Radix dialogs and menus. Visible focus and reduced-motion preferences are supported. Decorative icons use `aria-hidden`; icon-only interactive controls carry accessible names.
-
-The shadcn/ui primitives use adapted registry source. [The upstream notice](SHADCN_NOTICE.txt) applies to those components.
-
-## HU-006A demo surfaces
-
-The campus preview adds a sticky demonstration label, compact editorial panels and responsive catalogue cards. House badges are neutral placeholders with individual semantic identities. Character avatars use initials. Use the original shared layout and tokens for new views. Staff and student form controls share input styles, anchored labels and keyboard focus states. See [the source register](DEMO_SOURCES.md) for asset provenance.
+Shadcn/ui and Radix provide buttons, dialogs, dropdowns, inputs, alerts, toasts and loading states. Preserve named landmarks, label associations, visible keyboard focus, reduced motion and status announcements. The appearance picker supports light, dark and system preferences with local persistence. [The upstream shadcn/ui notice](SHADCN_NOTICE.txt) applies to the adapted primitives.

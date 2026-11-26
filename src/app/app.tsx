@@ -14,7 +14,7 @@ import { NotFoundPage } from '@/routes/not-found-page';
 const CampusRoutes = lazy(() => import('./campus-routes'));
 
 const titles = new Map([
-  ['/', 'Digital Campus'],
+  ['/', 'Accueil'],
   ['/login', 'Connexion'],
   ...campusDestinations.map(({ path, label }): [string, string] => [
     path,
@@ -30,7 +30,7 @@ function RouteEffects() {
     const route = pathname.replace(/\/+$/, '').toLowerCase() || '/';
     let title = titles.get(route) ?? 'Page introuvable';
     if (route.startsWith('/preview/houses/')) title = 'House';
-    if (route.startsWith('/preview/people/')) title = 'Profil RP';
+    if (route.startsWith('/preview/people/')) title = 'Profil';
     document.title = `${title} | Harvard University RP`;
     const moved =
       previousPath.current !== undefined && previousPath.current !== pathname;
@@ -57,7 +57,7 @@ export function App() {
           fallback={
             <main className="content-shell grid gap-4 py-12" aria-busy="true">
               <span className="sr-only" role="status">
-                Chargement de la démonstration
+                Chargement du campus
               </span>
               <Skeleton className="h-32" aria-hidden="true" />
               <Skeleton className="h-16 w-2/3" aria-hidden="true" />

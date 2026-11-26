@@ -1,19 +1,15 @@
-import { Landmark } from 'lucide-react';
 import { Link } from 'react-router';
 
-export function Brand() {
+export function Brand({ campus = false }: { campus?: boolean }) {
   return (
-    <Link to="/" className="brand">
-      <span className="brand-mark">
-        <Landmark aria-hidden="true" />
+    <Link to={campus ? '/preview' : '/'} className="brand">
+      <span className="brand-mark" aria-hidden="true">
+        H<span>RP</span>
       </span>
       <span className="brand-copy">
-        <span>
-          Harvard University <strong>RP</strong>
-        </span>
-        <small>Digital Campus</small>
+        {campus ? 'Digital Campus' : 'Harvard University RP'}
+        {campus && <small>Harvard University RP</small>}
       </span>
-      <span className="sr-only"> · Accueil</span>
     </Link>
   );
 }
