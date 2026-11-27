@@ -1,6 +1,17 @@
 import { z } from 'zod';
 
-import { ApiError } from './api-error';
+import { ApiError, apiErrorCodes } from './api-error';
+import {
+  characterId,
+  characterList,
+  characterCapacity,
+  characterDetail,
+  characterReviews,
+  characterCatalog,
+  clubCatalog,
+  type CharacterKind,
+  type EditableFields,
+} from './character-contract';
 import type { ApiConfig } from './api-config';
 import { playerContextSchema } from './player-context';
 import { readPublicUrl } from './public-url';
@@ -12,19 +23,31 @@ const healthSchema = z.object({
   service: z.literal('hu-api'),
 });
 
-const playerLinkError = z.object({
-  error: z.object({ code: z.literal('PLAYER_LINK_REQUIRED') }),
+const apiFailure = z.object({
+  error: z.object({
+    code: z.enum(apiErrorCodes),
+    requestId: z.uuid().optional(),
+  }),
 });
+
+const charactersPath = 'api/v1/characters';
+function characterPath(id: string) {
+  if (!characterId.safeParse(id).success)
+    throw new ApiError('http', 404, undefined, 'CHARACTER_NOT_FOUND');
+  return `${charactersPath}/${id}`;
+}
 
 export function createApiClient(
   config: ApiConfig,
   transport: typeof fetch = fetch,
 ) {
   async function request<Output>(
-    path: 'health' | 'api/v1/me' | 'api/v1/auth/bootstrap',
+    path: string,
     schema: z.ZodType<Output>,
     externalSignal?: AbortSignal,
     token?: string,
+    method = 'GET',
+    body?: object,
   ) {
     if (config.kind !== 'ready') throw new ApiError('unavailable');
     const base = readPublicUrl(config.baseUrl);
@@ -43,9 +66,11 @@ export function createApiClient(
     try {
       signal.throwIfAborted();
       const response = await transport(url, {
-        method: path === 'api/v1/auth/bootstrap' ? 'POST' : 'GET',
+        method,
+        body: body === undefined ? undefined : JSON.stringify(body),
         headers: {
           Accept: 'application/json',
+          ...(body && { 'Content-Type': 'application/json' }),
           ...(token && { Authorization: `Bearer ${token}` }),
         },
         credentials: 'omit',
@@ -55,25 +80,29 @@ export function createApiClient(
       });
       requestId = response.headers.get('X-Request-Id') || undefined;
       if (!response.ok) {
-        let code: ApiError['code'];
-        if (path === 'api/v1/me' && response.status === 403) {
-          const failure = (await response
-            .json()
-            .catch(() => undefined)) as unknown;
-          if (playerLinkError.safeParse(failure).success)
-            code = 'PLAYER_LINK_REQUIRED';
+        const failure =
+          token &&
+          apiFailure.safeParse(await response.json().catch(() => undefined));
+        if (failure && failure.success) {
+          requestId ??= failure.data.error.requestId;
+          throw new ApiError(
+            'http',
+            response.status,
+            requestId,
+            failure.data.error.code,
+          );
         }
-        throw new ApiError('http', response.status, requestId, code);
+        throw new ApiError('http', response.status, requestId);
       }
 
-      let body: unknown;
+      let payload: unknown;
       try {
-        body = await response.json();
+        payload = await response.json();
       } catch {
         signal.throwIfAborted();
         throw new ApiError('response', response.status, requestId);
       }
-      const result = schema.safeParse(body);
+      const result = schema.safeParse(payload);
       if (!result.success)
         throw new ApiError('response', response.status, requestId);
       return { data: result.data, requestId };
@@ -94,7 +123,63 @@ export function createApiClient(
     me: (token: string, signal?: AbortSignal) =>
       request('api/v1/me', playerContextSchema, signal, token),
     bootstrap: (token: string, signal?: AbortSignal) =>
-      request('api/v1/auth/bootstrap', playerContextSchema, signal, token),
+      request(
+        'api/v1/auth/bootstrap',
+        playerContextSchema,
+        signal,
+        token,
+        'POST',
+      ),
+    characters: {
+      list: (token: string, signal: AbortSignal) =>
+        request(charactersPath, characterList, signal, token),
+      capacity: (token: string, signal: AbortSignal) =>
+        request(charactersPath + '/capacity', characterCapacity, signal, token),
+      detail: async (token: string, signal: AbortSignal, id: string) =>
+        request(characterPath(id), characterDetail, signal, token),
+      create: (token: string, signal: AbortSignal, kind: CharacterKind) =>
+        request(charactersPath, characterDetail, signal, token, 'POST', {
+          kind,
+        }),
+      edit: async (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+        expectedRevision: string,
+        fields: EditableFields,
+      ) =>
+        request(characterPath(id), characterDetail, signal, token, 'PATCH', {
+          ...fields,
+          expectedRevision,
+        }),
+      submit: async (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+        expectedRevision: string,
+      ) =>
+        request(
+          characterPath(id) + '/submit',
+          characterDetail,
+          signal,
+          token,
+          'POST',
+          { expectedRevision },
+        ),
+      reviews: async (token: string, signal: AbortSignal, id: string) =>
+        request(
+          characterPath(id) + '/reviews',
+          characterReviews,
+          signal,
+          token,
+        ),
+      houses: (token: string, signal: AbortSignal) =>
+        request('api/v1/catalogs/houses', characterCatalog, signal, token),
+      programs: (token: string, signal: AbortSignal) =>
+        request('api/v1/catalogs/programs', characterCatalog, signal, token),
+      clubs: (token: string, signal: AbortSignal) =>
+        request('api/v1/catalogs/clubs', clubCatalog, signal, token),
+    },
   };
 }
 

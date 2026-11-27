@@ -30,13 +30,16 @@ export type AuthState =
         | 'initializing';
     }
   | { kind: 'problem'; problem: AuthProblem; hasSession: boolean }
-  | { kind: 'ready'; player: PlayerContext };
+  | { kind: 'ready'; player: PlayerContext; scope: AccountScope };
+
+export type AccountScope = Readonly<{ id: number; signal: AbortSignal }>;
 
 type Readiness = 'enabled' | 'disabled' | 'invalid-config';
 type Resolution = 'read' | 'bootstrap';
 type Dependencies = {
   service: () => AuthService | Promise<AuthService>;
-  api: Pick<ApiClient, 'me' | 'bootstrap'>;
+  api: Pick<ApiClient, 'me' | 'bootstrap'> &
+    Partial<Pick<ApiClient, 'characters'>>;
   callback: OAuthCallback;
   redirectTo: string;
 };
@@ -61,6 +64,9 @@ export function createAuthController(
   let resolution: Resolution = 'read';
   let pending: AbortController | undefined;
   let eventRevision = 0;
+  let account = new AbortController();
+  let scope: AccountScope = { id: 0, signal: account.signal };
+  let contextRefresh = 0;
   let retryRestore = false;
   let callback = dependencies?.callback;
 
@@ -74,6 +80,9 @@ export function createAuthController(
   }
 
   function discardAccount() {
+    account.abort();
+    account = new AbortController();
+    scope = { id: eventRevision, signal: account.signal };
     pending?.abort();
     pending = undefined;
     session = null;
@@ -142,7 +151,7 @@ export function createAuthController(
       }
       if (!request.signal.aborted) {
         resolution = 'read';
-        update({ kind: 'ready', player: result.data });
+        update({ kind: 'ready', player: result.data, scope });
       }
     } catch (error) {
       if (request.signal.aborted) return;
@@ -237,6 +246,41 @@ export function createAuthController(
     }
   }
 
+  async function authenticated<T>(
+    owner: AccountScope,
+    operation: (token: string, signal: AbortSignal) => Promise<T>,
+    caller?: AbortSignal,
+  ) {
+    const current = session;
+    if (
+      !current ||
+      owner !== scope ||
+      owner.signal.aborted ||
+      state.kind !== 'ready'
+    ) {
+      throw new ApiError('aborted');
+    }
+    const signal = caller
+      ? AbortSignal.any([owner.signal, caller])
+      : owner.signal;
+    if (signal.aborted) throw new ApiError('aborted');
+    try {
+      const data = await operation(current.accessToken, signal);
+      if (signal.aborted) throw new ApiError('aborted');
+      return data;
+    } catch (error) {
+      if (signal.aborted) throw new ApiError('aborted');
+      if (
+        error instanceof ApiError &&
+        error.status === 401 &&
+        session?.accessToken === current.accessToken
+      ) {
+        void signOut(true);
+      }
+      throw error;
+    }
+  }
+
   return {
     getSnapshot: () => state,
     subscribe(listener: () => void) {
@@ -267,6 +311,40 @@ export function createAuthController(
       if (pending || signingOut) return;
       if (session) void resolve(session, resolution);
       else if (retryRestore) void restore();
+    },
+    characterRequest<T>(
+      owner: AccountScope,
+      operation: (
+        client: ApiClient['characters'],
+        token: string,
+        signal: AbortSignal,
+      ) => Promise<T>,
+      caller?: AbortSignal,
+    ) {
+      return authenticated(
+        owner,
+        (token, signal) => {
+          if (!dependencies?.api.characters) throw new ApiError('unavailable');
+          return operation(dependencies.api.characters, token, signal);
+        },
+        caller,
+      );
+    },
+    async refreshPlayer(owner: AccountScope) {
+      if (!dependencies) return;
+      const refresh = ++contextRefresh;
+      try {
+        const result = await authenticated(owner, dependencies.api.me);
+        if (
+          owner === scope &&
+          refresh === contextRefresh &&
+          state.kind === 'ready'
+        ) {
+          update({ kind: 'ready', player: result.data, scope });
+        }
+      } catch {
+        // Confirmed character writes remain successful if context refresh fails.
+      }
     },
     signOut: () => signOut(),
   };

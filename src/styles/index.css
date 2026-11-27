@@ -3,6 +3,7 @@
 @import './tokens.css';
 @import './pages.css';
 @import './demo.css';
+@import './player-characters.css';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
