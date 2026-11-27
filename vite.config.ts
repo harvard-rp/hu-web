@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => ({
         loadEnv(mode, process.cwd(), 'VITE_CHARACTER_')
           .VITE_CHARACTER_LIFECYCLE_ENABLED === 'true',
     ),
+    __HU_STAFF_REVIEWS__: JSON.stringify(
+      mode !== 'github-pages' &&
+        loadEnv(mode, process.cwd(), 'VITE_STAFF_')
+          .VITE_STAFF_REVIEWS_ENABLED === 'true',
+    ),
     __HU_SUPABASE_CONFIG__: JSON.stringify(
       readSupabaseConfig(
         loadEnv(mode, process.cwd(), 'VITE_SUPABASE_'),

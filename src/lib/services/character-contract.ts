@@ -41,7 +41,7 @@ export const listLimits = { contentWarnings: 120, rpLinks: 300 } as const;
 export const listItemCount = 12;
 export const maxBodyBytes = 96 * 1024;
 
-const rpString = (limit: number) =>
+export const rpString = (limit: number) =>
   z
     .string()
     .refine(
@@ -126,14 +126,18 @@ export const characterCatalog = z.array(entry);
 export const clubCatalog = z.array(
   entry.extend({ memberCapacity: z.number().int().positive().nullable() }),
 );
-export const characterReviews = z.array(
-  z.strictObject({
-    decision: z.enum(['approved', 'changes_requested', 'rejected']),
-    reviewedAt: dateTime,
-    comment: nullableText,
-    assignedHouseId: z.uuid().nullable(),
-  }),
-);
+export const reviewDecision = z.enum([
+  'approved',
+  'changes_requested',
+  'rejected',
+]);
+export const characterReview = z.strictObject({
+  decision: reviewDecision,
+  reviewedAt: dateTime,
+  comment: nullableText,
+  assignedHouseId: z.uuid().nullable(),
+});
+export const characterReviews = z.array(characterReview);
 
 export type CharacterKind = z.infer<typeof characterKind>;
 export type CharacterSummary = z.infer<typeof summary>;

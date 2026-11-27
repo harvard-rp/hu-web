@@ -26,3 +26,5 @@ The separate authenticated space uses the browser Supabase Auth adapter and the 
 The gated account domain adds owned character routes and loads them on demand. It holds sheet values in component state, uses a session-scoped abort signal for authenticated requests and preserves user changes on revision conflicts. The enabled standard build uses a browser data router for SPA navigation blocking. The default build and static demo preserve their existing routing behavior. See [Player characters](PLAYER_CHARACTERS.md).
 
 Cloudflare Pages' [SPA fallback](https://developers.cloudflare.com/pages/configuration/serving-pages/#single-page-application-spa-rendering) covers direct normal paths. GitHub Pages receives the project root path for a direct hash URL and serves `index.html` there. The application catch-all handles unknown routes.
+
+The authenticated staff review domain uses the same HTTP client and a capability-specific cancellation scope. It shares the player sheet reader and keeps the synthetic staff prototype independent. See [STAFF_REVIEWS.md](STAFF_REVIEWS.md).

@@ -1,0 +1,25 @@
+# Authenticated staff reviews
+
+HU-009D implements the staff workflow against [hu-api at d1685e88](https://github.com/harvard-rp/hu-api/tree/d1685e88eb0dba43215f2e52015352c006f3bbb7). The [review contract](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/CHARACTER_REVIEWS.md) and [permission model](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/PERMISSIONS.md) are authoritative. The existing `/preview/staff` uses its own synthetic data and actions.
+
+| Screen                                   | API operation                                                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/account/staff`                         | `GET /api/v1/staff/characters` with the preceding `nextCursor` as `after` when changing pages. Uses the server's default page size. Manual refresh starts from the first page. |
+| `/account/staff/characters/:characterId` | `GET /api/v1/staff/characters/{characterId}` and `GET /api/v1/staff/characters/{characterId}/reviews`. The form also uses the authenticated Houses and programs catalogues.    |
+| Decision confirmation                    | `POST /api/v1/staff/characters/{characterId}/reviews` with `expectedRevision`, `decision`, and optional `comment` and `houseId`. Only a verified response confirms the write.  |
+
+The queue reports the last modification time and displays an independent suspension status. The backend supplies no queue total. The review page shares the read-only sheet and history components with the player workspace. It displays the history in API order and treats comments, narrative, RP links and face claims as plain text.
+
+A successful decision returns to a freshly fetched queue. Corrections and refusals require a player-facing comment. Approval allows an optional comment. Comments are limited to 2,000 Unicode code points. Student approval requires a new active House or an existing assignment. Omitting `houseId` preserves the existing assignment, including historical assignments absent from the active catalogue. Student corrections can assign a new active House. Rejection and non-student decisions send no `houseId`.
+
+A revision conflict requires an explicit reload and fresh review. After a concurrent decision the detail is hidden and the reviewer can return to the queue. If a write has an uncertain outcome, the reviewer must check current detail and history before any manual retry. A changed revision or history forces a new review. If the detail is no longer accessible, the page can report a newer decision visible in history without attributing it to the reviewer. The client never retries a decision automatically. Unsaved comments stay in memory until navigation is confirmed, the reviewer reloads for a fresh review, or the account or capability changes.
+
+## Authorization and activation
+
+The Auth controller grants a review request scope only after the effective `characters.review` capability is returned by `GET /api/v1/me`. A staff 403 cancels this scope immediately and refreshes the player context. Staff remains blocked in the current account session after that denial, including if a stale context still claims the grant. Once server-side access has been restored, reload the application to fetch a fresh context. Sign-out and account changes cancel all private requests. The authenticated transport rejects redirects and validates response schemas. PostgreSQL remains responsible for permissions, ownership, self-review restrictions, current state and atomic decisions.
+
+Both `VITE_CHARACTER_LIFECYCLE_ENABLED` and `VITE_STAFF_REVIEWS_ENABLED` default to false. GitHub Pages forces both off. Leave them false until the corresponding backend rollout and migrations have been authorized and verified. For a controlled standard build, enable both variables, confirm the API's CORS support for staff GET and POST with the Authorization header, and use a separately provisioned development account with the effective review grant. Configure Auth and the API as described in [AUTHENTICATION.md](AUTHENTICATION.md).
+
+## Integration verification
+
+With Docker available, use the backend's local Supabase stack and the migrations from HU-009A and HU-009B. Use separate synthetic owner, reviewer and unauthorized accounts. Verify a submitted draft appears only for the reviewer, that self-review and draft URLs are denied, that revocation removes an open review workspace on the next staff request, and that a correction can be resubmitted. Exercise a student with an inactive historical House, another requiring a new assignment, and competing decisions. The frontend suite uses mocked Auth and REST responses and does not exercise PostgreSQL permissions. No migration, permission grant or deployment is performed by this frontend.

@@ -44,6 +44,9 @@ function RouteEffects() {
     if (/^\/account\/characters\/[^/]+\/edit$/.test(route))
       title = 'Modifier la fiche';
     if (route === '/account/characters/new') title = 'Créer un personnage';
+    if (route === '/account/staff') title = 'Fiches à examiner';
+    if (/^\/account\/staff\/characters\/[^/]+$/.test(route))
+      title = 'Examen de la fiche';
     if (route.startsWith('/preview/houses/')) title = 'House';
     if (route.startsWith('/preview/people/')) title = 'Profil';
     document.title = `${title} | Harvard University RP`;
@@ -67,9 +70,11 @@ function RouteEffects() {
 export function App({
   auth = noAuth,
   charactersEnabled = false,
+  staffReviewsEnabled = false,
 }: {
   auth?: AuthController;
   charactersEnabled?: boolean;
+  staffReviewsEnabled?: boolean;
 }) {
   const authEnabled = !['disabled', 'invalid-config'].includes(
     auth.getSnapshot().kind,
@@ -104,7 +109,10 @@ export function App({
                 path={charactersEnabled ? 'account/*' : 'account'}
                 element={
                   charactersEnabled ? (
-                    <PlayerCharacterRoutes controller={auth} />
+                    <PlayerCharacterRoutes
+                      controller={auth}
+                      staffReviewsEnabled={staffReviewsEnabled}
+                    />
                   ) : (
                     <PersonalSpacePage controller={auth} />
                   )

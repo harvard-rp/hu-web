@@ -13,6 +13,12 @@ import {
   type EditableFields,
 } from './character-contract';
 import type { ApiConfig } from './api-config';
+import {
+  reviewInput,
+  reviewResult,
+  staffQueue,
+  type ReviewInput,
+} from './staff-review-contract';
 import { playerContextSchema } from './player-context';
 import { readPublicUrl } from './public-url';
 
@@ -31,10 +37,11 @@ const apiFailure = z.object({
 });
 
 const charactersPath = 'api/v1/characters';
-function characterPath(id: string) {
+const staffPath = 'api/v1/staff/characters';
+function characterPath(id: string, path = charactersPath) {
   if (!characterId.safeParse(id).success)
     throw new ApiError('http', 404, undefined, 'CHARACTER_NOT_FOUND');
-  return `${charactersPath}/${id}`;
+  return `${path}/${id}`;
 }
 
 export function createApiClient(
@@ -48,6 +55,7 @@ export function createApiClient(
     token?: string,
     method = 'GET',
     body?: object,
+    expectedStatus?: number,
   ) {
     if (config.kind !== 'ready') throw new ApiError('unavailable');
     const base = readPublicUrl(config.baseUrl);
@@ -95,6 +103,9 @@ export function createApiClient(
         throw new ApiError('http', response.status, requestId);
       }
 
+      if (expectedStatus !== undefined && response.status !== expectedStatus)
+        throw new ApiError('response', response.status, requestId);
+
       let payload: unknown;
       try {
         payload = await response.json();
@@ -130,6 +141,80 @@ export function createApiClient(
         token,
         'POST',
       ),
+    staff: {
+      queue: async (token: string, signal: AbortSignal, after?: string) => {
+        if (after !== undefined && !characterId.safeParse(after).success)
+          throw new ApiError(
+            'http',
+            400,
+            undefined,
+            'INVALID_CHARACTER_REQUEST',
+          );
+        return request(
+          after ? `${staffPath}?after=${after}` : staffPath,
+          staffQueue,
+          signal,
+          token,
+        );
+      },
+      detail: async (token: string, signal: AbortSignal, id: string) => {
+        const result = await request(
+          characterPath(id, staffPath),
+          characterDetail,
+          signal,
+          token,
+        );
+        if (
+          result.data.id !== id.toLowerCase() ||
+          result.data.validationStatus !== 'submitted'
+        )
+          throw new ApiError('response', 200, result.requestId);
+        return result;
+      },
+      reviews: async (token: string, signal: AbortSignal, id: string) =>
+        request(
+          characterPath(id, staffPath) + '/reviews',
+          characterReviews,
+          signal,
+          token,
+        ),
+      decide: async (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+        input: ReviewInput,
+      ) => {
+        const body = reviewInput.safeParse(input);
+        if (!body.success)
+          throw new ApiError(
+            'http',
+            400,
+            undefined,
+            'INVALID_CHARACTER_REQUEST',
+          );
+        const result = await request(
+          characterPath(id, staffPath) + '/reviews',
+          reviewResult,
+          signal,
+          token,
+          'POST',
+          body.data,
+          201,
+        );
+        if (
+          result.data.characterId !== id.toLowerCase() ||
+          result.data.revision === body.data.expectedRevision.toLowerCase() ||
+          result.data.review.decision !== body.data.decision ||
+          result.data.review.comment !== (body.data.comment ?? null) ||
+          result.data.review.assignedHouseId !==
+            (body.data.houseId?.toLowerCase() ?? null) ||
+          (body.data.houseId &&
+            result.data.houseId !== body.data.houseId.toLowerCase())
+        )
+          throw new ApiError('response', 201, result.requestId);
+        return result;
+      },
+    },
     characters: {
       list: (token: string, signal: AbortSignal) =>
         request(charactersPath, characterList, signal, token),
