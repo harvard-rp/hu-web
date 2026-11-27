@@ -32,6 +32,8 @@ For a future approved enablement, register the **Supabase** callback URI in the 
 
 ## Sessions and API behavior
 
+A successful token rotation revalidates the current player context in the background. It preserves the account scope and unsaved changes while access remains valid. If the returned capabilities no longer include review, the controller cancels the staff scope and closes the private review view.
+
 The SDK is responsible for reading the session, retaining the PKCE verifier across the redirect, refreshing the session and signing out locally. A project-scoped storage adapter uses browser `localStorage` and strips Discord `provider_token` and `provider_refresh_token` from session reads and writes. The access and refresh tokens for **Supabase Auth** remain available to JavaScript and are exposed to same-origin XSS. This storage has none of the JavaScript isolation of an HttpOnly cookie. Restrict trusted scripts, serve the site over HTTPS and reassess storage and deployment security before production activation.
 
 The app keeps the player context in memory. A change of account or sign-out clears the previous context and aborts requests. Stale results cannot repopulate the previous account. Token refresh updates the bearer for later requests. The pinned SDK removes the browser session when signing out this browser, then attempts to revoke the refresh token. Issued access tokens may remain valid until their server-side expiry.

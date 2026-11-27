@@ -275,6 +275,13 @@ function fixture({
     posts: () => calls.filter(({ method }) => method === 'POST'),
     receive: (next: AuthSession | null) =>
       act(() => listener(next ? 'SIGNED_IN' : 'SIGNED_OUT', next)),
+    rotate: () =>
+      act(() =>
+        listener('TOKEN_REFRESHED', {
+          ...session,
+          accessToken: 'synthetic-session-rotated',
+        }),
+      ),
     revoke: () => {
       hasGrant = false;
     },
@@ -629,6 +636,37 @@ describe('authenticated staff review', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('Élise Armand')).not.toBeInTheDocument();
     expect(f.posts()).toHaveLength(1);
+  });
+
+  it('refreshes capabilities on token rotation without losing an authorized reviewer’s draft', async () => {
+    const f = fixture();
+    const editor = await screen.findByLabelText(/Commentaire/);
+    await f.user.type(editor, comment);
+    await f.rotate();
+    await waitFor(() =>
+      expect(f.calls.filter(({ path }) => path === '/api/v1/me')).toHaveLength(
+        2,
+      ),
+    );
+    expect(editor).toHaveValue(comment);
+    expect(screen.getByText('Élise Armand')).toBeInTheDocument();
+    expect(f.posts()).toHaveLength(0);
+  });
+
+  it('clears an open staff sheet when revalidation after token rotation sees revocation', async () => {
+    const f = fixture();
+    await screen.findByText('Élise Armand');
+    f.revoke();
+    await f.rotate();
+    expect(
+      await screen.findByRole('heading', { name: 'Accès staff indisponible' }),
+    ).toBeVisible();
+    const current = f.calls.filter(({ path }) => path === '/api/v1/me').at(-1);
+    expect(new Headers(current?.init.headers).get('Authorization')).toBe(
+      'Bearer synthetic-session-rotated',
+    );
+    expect(screen.queryByText('Élise Armand')).not.toBeInTheDocument();
+    expect(f.posts()).toHaveLength(0);
   });
 
   it('drops staff data immediately on a backend denial and refreshes the effective permissions', async () => {
