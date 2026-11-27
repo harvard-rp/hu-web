@@ -25,10 +25,7 @@ export const useLabel = {
 } satisfies Record<CharacterSummary['useStatus'], string>;
 
 export function canEdit(character: CharacterSummary) {
-  return (
-    character.validationStatus === 'draft' ||
-    character.validationStatus === 'changes_requested'
-  );
+  return !character.archivedAt && character.actions.canEdit;
 }
 
 export function characterName(character: CharacterSummary) {
@@ -55,6 +52,10 @@ const errorMessages: Partial<Record<NonNullable<ApiError['code']>, string>> = {
   CHARACTER_LOCKED: 'Cette fiche est verrouillée. Consultez son état actuel.',
   CHARACTER_REVISION_CONFLICT:
     'Cette fiche a changé depuis son ouverture. Vos modifications locales sont conservées.',
+  CHARACTER_REOPENING_CONFLICT:
+    'Une demande est déjà en attente ou a été traitée. Consultez l’état actuel.',
+  INVALID_EXTERNAL_ATTESTATION:
+    'La consultation manuelle de la fiche externe doit être attestée.',
   CHARACTER_INCOMPLETE:
     'Complétez les champs requis avant de soumettre la fiche.',
   INVALID_CHARACTER_PROGRAM:
@@ -136,8 +137,13 @@ export function Screen({
 export function CharacterState({ character }: { character: CharacterSummary }) {
   return (
     <div className="player-statuses">
+      {character.refusalCount > 0 && (
+        <span className="player-status">{character.refusalCount} refus</span>
+      )}
       <span className="player-status">
-        {validationLabel[character.validationStatus]}
+        {character.archivedAt
+          ? 'Archivé'
+          : validationLabel[character.validationStatus]}
       </span>
       <span
         className="player-status"

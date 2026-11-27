@@ -30,12 +30,15 @@ export const reviewInput = z.strictObject({
   decision: reviewDecision,
   comment: rpString(reviewCommentLimit).optional(),
   houseId: z.uuid().optional(),
+  externalAttested: z.boolean().optional(),
 });
 
 export const reviewResult = z.strictObject({
   characterId,
   revision: z.uuid(),
   houseId: z.uuid().nullable(),
+  refusalCount: z.number().int().nonnegative(),
+  archivedAt: z.iso.datetime({ offset: true }).nullable(),
   review: characterReview,
 });
 

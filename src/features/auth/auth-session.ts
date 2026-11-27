@@ -36,6 +36,8 @@ export type AuthState =
       scope: AccountScope;
       reviewSignal?: AbortSignal;
       reviewRefusal?: ApiError;
+      reopenSignal?: AbortSignal;
+      reopenRefusal?: ApiError;
     };
 
 export type AccountScope = Readonly<{ id: number; signal: AbortSignal }>;
@@ -45,7 +47,7 @@ type Resolution = 'read' | 'bootstrap';
 type Dependencies = {
   service: () => AuthService | Promise<AuthService>;
   api: Pick<ApiClient, 'me' | 'bootstrap'> &
-    Partial<Pick<ApiClient, 'characters' | 'staff'>>;
+    Partial<Pick<ApiClient, 'characters' | 'staff' | 'reopen'>>;
   callback: OAuthCallback;
   redirectTo: string;
 };
@@ -72,8 +74,25 @@ export function createAuthController(
   let eventRevision = 0;
   let account = new AbortController();
   let scope: AccountScope = { id: 0, signal: account.signal };
-  let reviewAccess: AbortController | undefined;
-  let reviewRefusal: ApiError | undefined;
+  const grants = {
+    review: {
+      capability: 'characters.review',
+      access: undefined as AbortController | undefined,
+      refusal: undefined as ApiError | undefined,
+    },
+    reopen: {
+      capability: 'characters.reopen',
+      access: undefined as AbortController | undefined,
+      refusal: undefined as ApiError | undefined,
+    },
+  } satisfies Record<
+    'review' | 'reopen',
+    {
+      capability: PlayerContext['capabilities'][number];
+      access?: AbortController;
+      refusal?: ApiError;
+    }
+  >;
   let contextRefresh = 0;
   let retryRestore = false;
   let callback = dependencies?.callback;
@@ -84,22 +103,26 @@ export function createAuthController(
   }
 
   function publishPlayer(player: PlayerContext, fromMe: boolean) {
-    if (
-      fromMe &&
-      player.capabilities.includes('characters.review') &&
-      !reviewRefusal
-    ) {
-      reviewAccess ??= new AbortController();
-    } else {
-      reviewAccess?.abort();
-      reviewAccess = undefined;
+    for (const grant of Object.values(grants)) {
+      if (
+        fromMe &&
+        player.capabilities.includes(grant.capability) &&
+        !grant.refusal
+      ) {
+        grant.access ??= new AbortController();
+      } else {
+        grant.access?.abort();
+        grant.access = undefined;
+      }
     }
     update({
       kind: 'ready',
       player,
       scope,
-      reviewSignal: reviewAccess?.signal,
-      reviewRefusal,
+      reviewSignal: grants.review.access?.signal,
+      reviewRefusal: grants.review.refusal,
+      reopenSignal: grants.reopen.access?.signal,
+      reopenRefusal: grants.reopen.refusal,
     });
   }
 
@@ -108,9 +131,11 @@ export function createAuthController(
   }
 
   function discardAccount() {
-    reviewAccess?.abort();
-    reviewAccess = undefined;
-    reviewRefusal = undefined;
+    for (const grant of Object.values(grants)) {
+      grant.access?.abort();
+      grant.access = undefined;
+      grant.refusal = undefined;
+    }
     account.abort();
     account = new AbortController();
     scope = { id: eventRevision, signal: account.signal };
@@ -185,7 +210,12 @@ export function createAuthController(
       if (!request.signal.aborted) {
         resolution = 'read';
         publishPlayer(result.data, fromMe);
-        if (!fromMe && result.data.capabilities.includes('characters.review'))
+        if (
+          !fromMe &&
+          Object.values(grants).some(({ capability }) =>
+            result.data.capabilities.includes(capability),
+          )
+        )
           void refreshPlayer(scope);
       }
     } catch (error) {
@@ -338,6 +368,38 @@ export function createAuthController(
     }
   }
 
+  async function withCapability<T>(
+    kind: keyof typeof grants,
+    owner: AccountScope,
+    grant: AbortSignal,
+    operation: (token: string, signal: AbortSignal) => Promise<T>,
+    caller: AbortSignal,
+  ) {
+    const record = grants[kind];
+    if (grant !== record.access?.signal || grant.aborted)
+      throw new ApiError('aborted');
+    try {
+      return await authenticated(
+        owner,
+        operation,
+        AbortSignal.any([caller, grant]),
+      );
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.status === 403 &&
+        owner === scope &&
+        grant === record.access?.signal &&
+        state.kind === 'ready'
+      ) {
+        record.refusal = error;
+        publishPlayer(state.player, true);
+        void refreshPlayer(owner);
+      }
+      throw error;
+    }
+  }
+
   return {
     getSnapshot: () => state,
     subscribe(listener: () => void) {
@@ -397,30 +459,35 @@ export function createAuthController(
       ) => Promise<T>,
       caller: AbortSignal,
     ) {
-      if (grant !== reviewAccess?.signal || grant.aborted)
-        throw new ApiError('aborted');
       const { staff, characters } = dependencies?.api ?? {};
       if (!staff || !characters) throw new ApiError('unavailable');
-      try {
-        return await authenticated(
-          owner,
-          (token, signal) => operation({ staff, characters }, token, signal),
-          AbortSignal.any([caller, grant]),
-        );
-      } catch (error) {
-        if (
-          error instanceof ApiError &&
-          error.status === 403 &&
-          owner === scope &&
-          grant === reviewAccess?.signal &&
-          state.kind === 'ready'
-        ) {
-          reviewRefusal = error;
-          publishPlayer(state.player, false);
-          void refreshPlayer(owner);
-        }
-        throw error;
-      }
+      return withCapability(
+        'review',
+        owner,
+        grant,
+        (token, signal) => operation({ staff, characters }, token, signal),
+        caller,
+      );
+    },
+    async reopeningRequest<T>(
+      owner: AccountScope,
+      grant: AbortSignal,
+      operation: (
+        api: Pick<ApiClient, 'reopen' | 'characters'>,
+        token: string,
+        signal: AbortSignal,
+      ) => Promise<T>,
+      caller: AbortSignal,
+    ) {
+      const { reopen, characters } = dependencies?.api ?? {};
+      if (!reopen || !characters) throw new ApiError('unavailable');
+      return withCapability(
+        'reopen',
+        owner,
+        grant,
+        (token, signal) => operation({ reopen, characters }, token, signal),
+        caller,
+      );
     },
     refreshPlayer,
     signOut: () => signOut(),

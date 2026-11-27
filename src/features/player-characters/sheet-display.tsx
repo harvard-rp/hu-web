@@ -1,3 +1,4 @@
+import { ExternalSheetLink } from './sheet-mode';
 import type {
   CharacterCatalog,
   CharacterDetail,
@@ -29,6 +30,18 @@ export function ReviewHistory({
                   {charactersDate.format(new Date(review.reviewedAt))}
                 </time>
               </div>
+              {review.archivedCharacter && (
+                <p>Fiche archivée à la suite de ce refus.</p>
+              )}
+              {review.externalEvidence && (
+                <p>
+                  Consultation attestée ·{' '}
+                  <ExternalSheetLink
+                    url={review.externalEvidence.url}
+                    label="Ouvrir le document examiné"
+                  />
+                </p>
+              )}
               {review.comment && (
                 <p className="player-prose">{review.comment}</p>
               )}
@@ -66,34 +79,55 @@ export function SheetFields({
   return (
     <div className="player-sheet-display">
       {sheetSections.map(({ title, fields }) => {
-        const values = (
+        const values: { label: string; value: React.ReactNode }[] = (
           showAll ? fields : fieldsFor(sheet.kind, fields)
-        ).flatMap(({ field, label }) => {
-          const value = sheet[field];
-          if (value === null || (Array.isArray(value) && !value.length))
-            return [];
-          if (field === 'programId')
+        ).flatMap<{ label: string; value: React.ReactNode }>(
+          ({ field, label }) => {
+            if (field === 'sheetMode')
+              return [
+                {
+                  label,
+                  value:
+                    sheet.sheetMode === 'external'
+                      ? 'Fiche externe'
+                      : 'Rédaction sur le site',
+                },
+              ];
+            if (field === 'externalUrl')
+              return sheet.sheetMode === 'external'
+                ? [
+                    {
+                      label,
+                      value: <ExternalSheetLink url={sheet.externalUrl} />,
+                    },
+                  ]
+                : [];
+            const value = sheet[field];
+            if (value === null || (Array.isArray(value) && !value.length))
+              return [];
+            if (field === 'programId')
+              return [
+                {
+                  label,
+                  value: catalogName(
+                    programs,
+                    sheet.programId,
+                    'Filière hors catalogue',
+                  ),
+                },
+              ];
+            if (typeof value === 'boolean')
+              return [{ label, value: value ? 'Oui' : 'Non' }];
             return [
               {
                 label,
-                value: catalogName(
-                  programs,
-                  sheet.programId,
-                  'Filière hors catalogue',
-                ),
+                value: Array.isArray(value)
+                  ? value.filter(Boolean).join('\n')
+                  : String(value),
               },
             ];
-          if (typeof value === 'boolean')
-            return [{ label, value: value ? 'Oui' : 'Non' }];
-          return [
-            {
-              label,
-              value: Array.isArray(value)
-                ? value.filter(Boolean).join('\n')
-                : String(value),
-            },
-          ];
-        });
+          },
+        );
         if (
           title === 'Université' &&
           (sheet.kind === 'student' || sheet.houseId)

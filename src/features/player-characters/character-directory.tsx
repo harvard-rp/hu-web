@@ -1,3 +1,5 @@
+import { SheetModeChoice } from './sheet-mode';
+import type { SheetMode } from '@/lib/services/character-contract';
 import { ArrowRight } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -27,10 +29,12 @@ export function CharacterDirectory({
   session,
   player,
   showStaff,
+  showReopeningStaff,
 }: {
   session: PlayerSession;
   player: PlayerContext;
   showStaff?: boolean;
+  showReopeningStaff?: boolean;
 }) {
   const { controller, scope } = session;
   const load = useCallback(
@@ -60,6 +64,16 @@ export function CharacterDirectory({
           </Button>
         )}
       </div>
+      <nav aria-label="Dossiers de personnages" className="player-actions">
+        <Button asChild variant="outline">
+          <Link to="/account/archives">Mes archives</Link>
+        </Button>
+        {showReopeningStaff && (
+          <Button asChild variant="outline">
+            <Link to="/account/reopening">Réouverture des archives</Link>
+          </Button>
+        )}
+      </nav>
       {state.kind === 'loading' && (
         <p role="status">Chargement de vos personnages…</p>
       )}
@@ -241,6 +255,7 @@ function ClubDirectory({
 export function CreateCharacter({ session }: { session: PlayerSession }) {
   const navigate = useNavigate();
   const [kind, setKind] = useState<CharacterKind>('student');
+  const [mode, setMode] = useState<SheetMode>('inline');
   const mutation = usePlayerMutation(session);
   const uncertain = !!mutation.failure && isUncertain(mutation.failure.error);
   const guard = useExitGuard(mutation.pending, session.scope.signal);
@@ -253,7 +268,7 @@ export function CreateCharacter({ session }: { session: PlayerSession }) {
           event.preventDefault();
           if (uncertain) return;
           void mutation.run(
-            (api, token, signal) => api.create(token, signal, kind),
+            (api, token, signal) => api.create(token, signal, kind, mode),
             ({ data }) => {
               guard.allowExit();
               void navigate(`/account/characters/${data.id}/edit`, {
@@ -283,6 +298,9 @@ export function CreateCharacter({ session }: { session: PlayerSession }) {
               {label}
             </label>
           ))}
+        </fieldset>
+        <fieldset disabled={mutation.pending || uncertain}>
+          <SheetModeChoice value={mode} change={setMode} />
         </fieldset>
         {mutation.failure && (
           <CharacterError

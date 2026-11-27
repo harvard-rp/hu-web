@@ -37,7 +37,9 @@ export function StaffQueuePage({ session }: { session: ReviewSession }) {
     <Screen title="Fiches à examiner" back={backToAccount}>
       {confirmed && (
         <p role="status" className="staff-confirmed">
-          Décision enregistrée.
+          {location.state?.characterArchived
+            ? 'Décision enregistrée. La fiche est archivée et un emplacement a été libéré.'
+            : 'Décision enregistrée.'}
         </p>
       )}
       <div className="player-section-bar">

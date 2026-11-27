@@ -46,6 +46,11 @@ const draft: CharacterDetail = {
   id,
   kind: 'student',
   validationStatus: 'submitted',
+  sheetMode: 'inline',
+  refusalCount: 0,
+  archivedAt: null,
+  actions: { canEdit: false, canSubmit: false, canRequestReopening: false },
+  externalUrl: null,
   useStatus: 'active',
   revision: initialRevision,
   createdAt: timestamp,
@@ -83,6 +88,9 @@ const priorReview = {
   reviewedAt: timestamp,
   comment: '<b>Préciser la chronologie.</b>',
   assignedHouseId: null,
+  examinedRevision: null,
+  archivedCharacter: false,
+  externalEvidence: null,
 };
 const fail = (status: number, code: string) =>
   Response.json(
@@ -93,6 +101,8 @@ const fail = (status: number, code: string) =>
 function fixture({
   route = detail,
   staff = true,
+  reopen = false,
+  reopeningEnabled = false,
   enabled = true,
   charactersEnabled = true,
   sheet = draft,
@@ -101,6 +111,8 @@ function fixture({
 }: {
   route?: string;
   staff?: boolean;
+  reopen?: boolean;
+  reopeningEnabled?: boolean;
   enabled?: boolean;
   charactersEnabled?: boolean;
   sheet?: CharacterDetail;
@@ -116,6 +128,7 @@ function fixture({
   let listener: (event: SessionEvent, next: AuthSession | null) => void;
   let current: CharacterDetail = { ...sheet };
   let hasGrant = staff;
+  let canReopen = reopen;
   let history: CharacterReviews = [priorReview];
   const service: AuthService = {
     signIn: vi.fn(),
@@ -149,7 +162,10 @@ function fixture({
     if (url.pathname === '/api/v1/me')
       return Response.json({
         ...currentPlayer,
-        capabilities: hasGrant ? ['characters.review'] : [],
+        capabilities: [
+          ...(hasGrant ? ['characters.review'] : []),
+          ...(canReopen ? ['characters.reopen'] : []),
+        ],
         characters: [
           {
             id: uuid(30),
@@ -167,6 +183,10 @@ function fixture({
           firstName: 'Camille',
           lastName: 'Renard',
           nickname: null,
+          sheetMode: 'inline',
+          refusalCount: 0,
+          archivedAt: null,
+          actions: draft.actions,
           validationStatus: 'approved',
           useStatus: 'active',
           revision: nextRevision,
@@ -212,15 +232,26 @@ function fixture({
       if (call.method === 'POST' && call.body) {
         const { decision, expectedRevision, comment, houseId } = call.body;
         expect(expectedRevision).toBe(current.revision);
+        const refusalCount =
+          current.refusalCount + (decision === 'rejected' ? 1 : 0);
+        const archivedAt =
+          decision === 'rejected' && refusalCount >= 3 ? timestamp : null;
         const review = {
           decision,
           reviewedAt: timestamp,
           comment: comment ?? null,
           assignedHouseId: houseId ?? null,
+          examinedRevision: expectedRevision,
+          archivedCharacter: !!archivedAt,
+          externalEvidence: call.body.externalAttested
+            ? { url: current.externalUrl!, attested: true as const }
+            : null,
         };
         current = {
           ...current,
           validationStatus: decision,
+          refusalCount,
+          archivedAt,
           revision: nextRevision,
           houseId: houseId ?? current.houseId,
         };
@@ -230,6 +261,8 @@ function fixture({
             characterId: id,
             revision: nextRevision,
             houseId: current.houseId,
+            refusalCount,
+            archivedAt,
             review,
           },
           { status: 201 },
@@ -258,6 +291,7 @@ function fixture({
             auth={auth}
             charactersEnabled={charactersEnabled}
             staffReviewsEnabled={enabled}
+            reopeningEnabled={reopeningEnabled}
           />
         ),
       },
@@ -282,6 +316,9 @@ function fixture({
           accessToken: 'synthetic-session-rotated',
         }),
       ),
+    revokeReopening: () => {
+      canReopen = false;
+    },
     revoke: () => {
       hasGrant = false;
     },
@@ -475,9 +512,13 @@ describe('authenticated staff review', () => {
     'requires a comment for %s and sends only permitted fields',
     async (decision) => {
       const f = fixture();
-      await propose(f, 'changes_requested');
+      await f.user.selectOptions(
+        await screen.findByLabelText('Décision proposée'),
+        'approved',
+      );
       await f.user.selectOptions(screen.getByLabelText(/^House/), houseId);
       await propose(f, decision);
+      expect(screen.queryByLabelText(/^House/)).not.toBeInTheDocument();
       expect(screen.getByRole('alert')).toHaveTextContent(
         'Un commentaire est obligatoire',
       );
@@ -490,7 +531,6 @@ describe('authenticated staff review', () => {
         expectedRevision: initialRevision,
         decision,
         comment,
-        ...(decision === 'changes_requested' && { houseId }),
       });
     },
   );
@@ -606,6 +646,9 @@ describe('authenticated staff review', () => {
               reviewedAt: timestamp,
               comment: null,
               assignedHouseId: null,
+              examinedRevision: null,
+              archivedCharacter: false,
+              externalEvidence: null,
             },
           })
         : undefined,
@@ -772,5 +815,323 @@ describe('authenticated staff review', () => {
       await screen.findByText('Mode démonstration', { exact: true }),
     ).toBeInTheDocument();
     expect(f.calls).toHaveLength(0);
+  });
+});
+
+describe('staff policy changes', () => {
+  it('requires a manual attestation and surfaces evidence for external reviews', async () => {
+    const url = 'https://www.canva.com/design/Character/view';
+    const f = fixture({
+      sheet: {
+        ...draft,
+        kind: 'teacher',
+        sheetMode: 'external',
+        externalUrl: url,
+      },
+    });
+    await propose(f, 'approved');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Attestez la consultation',
+    );
+    const links = screen.getAllByRole('link', {
+      name: /Ouvrir la fiche externe/,
+    });
+    for (const link of links) {
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    }
+    const box = screen.getByRole('checkbox');
+    expect(box).not.toBeChecked();
+    await f.user.click(box);
+    await propose(f, 'approved');
+    await confirm(f);
+    expect(
+      await screen.findByText('Décision enregistrée.'),
+    ).toBeInTheDocument();
+    expect(f.posts()[0]?.body).toMatchObject({ externalAttested: true });
+  });
+
+  it('warns that the third refusal archives and releases a slot', async () => {
+    const f = fixture({ sheet: { ...draft, refusalCount: 2 } });
+    await propose(f, 'rejected', { comment });
+    expect(
+      within(await screen.findByRole('dialog')).getByText(
+        /archivera la fiche et libérera/,
+      ),
+    ).toBeVisible();
+    await confirm(f);
+    expect(
+      await screen.findByText(
+        /La fiche est archivée et un emplacement a été libéré/,
+      ),
+    ).toBeVisible();
+  });
+
+  const archivesPath = '/account/reopening';
+  const archivePath = `${archivesPath}/${id}`;
+  const request = {
+    requestId: uuid(88),
+    requestedRevision: initialRevision,
+    reason: 'Poursuivre le personnage.',
+    requestedAt: timestamp,
+    decision: null,
+    justification: null,
+    decidedAt: null,
+    resultingRevision: null,
+  };
+  function archiveFixture(
+    opts: {
+      review?: boolean;
+      reopen?: boolean;
+      full?: boolean;
+      route?: string;
+    } = {},
+  ) {
+    const f = fixture({
+      route: opts.route ?? archivePath,
+      staff: opts.review ?? false,
+      reopen: opts.reopen ?? true,
+      reopeningEnabled: true,
+    });
+    let resolved: 'accepted' | 'declined' | null = null;
+    let blocked = opts.full;
+    let revoked = false;
+    let uncertain = false;
+    f.override.mockImplementation(({ path, method, body }) => {
+      const reopeningPath = apiSheet + '/reopening-requests';
+      if (
+        path.startsWith(apiQueue + '/archives') ||
+        path === apiSheet + '/archive' ||
+        path === reopeningPath
+      ) {
+        if (revoked) return fail(403, 'CHARACTER_REOPENING_FORBIDDEN');
+        const outcome = resolved
+          ? {
+              ...request,
+              decision: resolved,
+              justification: 'Décision fictive.',
+              decidedAt: timestamp,
+              resultingRevision: resolved === 'accepted' ? nextRevision : null,
+            }
+          : request;
+        if (path === reopeningPath && method === 'GET')
+          return Response.json([outcome]);
+        if (path === reopeningPath && method === 'POST') {
+          expect(body).toEqual({
+            requestId: request.requestId,
+            expectedRevision: initialRevision,
+            decision: expect.any(String),
+            justification: 'Décision fictive.',
+          });
+          if (blocked) return fail(409, 'CHARACTER_CAPACITY_REACHED');
+          if (resolved) return fail(409, 'CHARACTER_REOPENING_CONFLICT');
+          resolved = (body as unknown as { decision: 'accepted' | 'declined' })
+            .decision;
+          return uncertain
+            ? fail(503, 'SERVICE_UNAVAILABLE')
+            : Response.json({
+                ...request,
+                decision: resolved,
+                justification: 'Décision fictive.',
+                decidedAt: timestamp,
+                resultingRevision:
+                  resolved === 'accepted' ? nextRevision : null,
+              });
+        }
+        if (path === apiSheet + '/archive') {
+          return resolved === 'accepted'
+            ? fail(404, 'CHARACTER_NOT_FOUND')
+            : Response.json({
+                sheet: {
+                  ...draft,
+                  validationStatus: 'rejected',
+                  archivedAt: timestamp,
+                  refusalCount: 3,
+                },
+                reviews: [
+                  {
+                    ...priorReview,
+                    decision: 'rejected',
+                    archivedCharacter: true,
+                  },
+                ],
+              });
+        }
+        const second = path.includes('?after=');
+        return Response.json({
+          items:
+            resolved === 'accepted'
+              ? []
+              : [
+                  {
+                    id: second ? uuid(89) : id,
+                    kind: 'student',
+                    revision: initialRevision,
+                    archivedAt: timestamp,
+                    refusalCount: 3,
+                    firstName: 'Élise',
+                    lastName: 'Armand',
+                    pendingRequestId:
+                      second || resolved ? null : request.requestId,
+                  },
+                ],
+          nextCursor: second || resolved ? null : id,
+        });
+      }
+    });
+    return {
+      ...f,
+      release: () => {
+        blocked = false;
+      },
+      breakReply: () => {
+        uncertain = true;
+      },
+      competing: () => {
+        resolved = 'accepted';
+      },
+      removeAccess: () => {
+        revoked = true;
+      },
+    };
+  }
+  async function decideReopening(
+    f: ReturnType<typeof archiveFixture>,
+    decision: 'accepted' | 'declined' = 'accepted',
+  ) {
+    await f.user.selectOptions(
+      await screen.findByLabelText('Décision proposée'),
+      decision,
+    );
+    const field = screen.getByLabelText('Justification');
+    if (!(field as HTMLTextAreaElement).value)
+      await f.user.type(field, 'Décision fictive.');
+    await f.user.click(
+      screen.getByRole('button', { name: 'Vérifier la décision' }),
+    );
+    await f.user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Confirmer l’envoi',
+      }),
+    );
+  }
+
+  it('allows reopening-only staff, paginates archives and denies ordinary review', async () => {
+    const f = archiveFixture({ route: archivesPath });
+    expect(await screen.findByText('Demande en attente')).toBeVisible();
+    await f.user.click(screen.getByRole('button', { name: 'Page suivante' }));
+    expect(await screen.findByText('Aucune demande en attente')).toBeVisible();
+    await act(() => f.router.navigate(queue));
+    expect(
+      await screen.findByRole('heading', { name: 'Accès staff indisponible' }),
+    ).toBeVisible();
+  });
+
+  it('denies review-only staff access to the reopening archive', async () => {
+    const f = archiveFixture({ review: true, reopen: false });
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Accès aux réouvertures indisponible',
+      }),
+    ).toBeVisible();
+    expect(f.calls.some(({ path }) => path.endsWith('/archive'))).toBe(false);
+    await act(() => f.router.navigate(queue));
+    expect(
+      await screen.findByRole('heading', { name: 'Fiches à examiner' }),
+    ).toBeVisible();
+  });
+
+  it('keeps the request pending at capacity and accepts it when a slot is available', async () => {
+    const f = archiveFixture({ full: true });
+    expect(
+      await screen.findByText('Fiche archivée à la suite de ce refus.'),
+    ).toBeVisible();
+    await decideReopening(f);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La demande reste en attente.',
+    );
+    expect(screen.getByText('En attente', { exact: true })).toBeVisible();
+    f.release();
+    await decideReopening(f);
+    expect(
+      await screen.findByText('Aucun personnage archivé sur cette page.'),
+    ).toBeVisible();
+    expect(f.calls.some(({ path }) => path === apiSheet)).toBe(false);
+  });
+
+  it('declines a reopening with a justification and leaves the character archived', async () => {
+    const f = archiveFixture();
+    await decideReopening(f, 'declined');
+    expect(await screen.findByText('Aucune demande en attente')).toBeVisible();
+    await f.user.click(
+      screen.getByRole('link', { name: /Consulter l’archive/ }),
+    );
+    expect(await screen.findByText('Refusée', { exact: true })).toBeVisible();
+    expect(screen.getByText('Décision fictive.')).toBeVisible();
+  });
+
+  it.each(['lost response', 'concurrent decision'])(
+    'checks archive and timeline after a %s without replay',
+    async (scenario) => {
+      const f = archiveFixture();
+      await screen.findByLabelText('Justification');
+      if (scenario === 'lost response') f.breakReply();
+      else f.competing();
+      await decideReopening(f);
+      await f.user.click(
+        await screen.findByRole('button', {
+          name: 'Vérifier la fiche et l’historique',
+        }),
+      );
+      expect(
+        await screen.findByText('Aucun personnage archivé sur cette page.'),
+      ).toBeVisible();
+      expect(f.posts()).toHaveLength(1);
+      expect(
+        f.calls.filter(
+          ({ path, method }) =>
+            path === apiSheet + '/reopening-requests' && method === 'GET',
+        ),
+      ).toHaveLength(2);
+      expect(f.calls.some(({ path }) => path === apiSheet)).toBe(false);
+    },
+  );
+
+  it('revokes reopening alone on a backend refusal even with a stale player context', async () => {
+    const f = archiveFixture({ review: true, route: archivesPath });
+    await screen.findByText('Demande en attente');
+    f.removeAccess();
+    await f.user.click(
+      screen.getByRole('button', { name: 'Actualiser les archives' }),
+    );
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Accès aux réouvertures indisponible',
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText('Élise Armand')).not.toBeInTheDocument();
+    await act(() => f.router.navigate(queue));
+    expect(
+      await screen.findByRole('heading', { name: 'Fiches à examiner' }),
+    ).toBeVisible();
+  });
+
+  it('revalidates the reopen grant on token rotation without dropping review', async () => {
+    const f = archiveFixture({ review: true, route: archivesPath });
+    await screen.findByText('Demande en attente');
+    f.revokeReopening();
+    await f.rotate();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Accès aux réouvertures indisponible',
+      }),
+    ).toBeVisible();
+    await act(() => f.router.navigate(queue));
+    expect(
+      await screen.findByRole('heading', { name: 'Fiches à examiner' }),
+    ).toBeVisible();
+    expect(f.calls.at(-1)?.init.headers).toMatchObject({
+      Authorization: 'Bearer synthetic-session-rotated',
+    });
   });
 });

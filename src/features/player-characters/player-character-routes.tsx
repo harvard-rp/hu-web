@@ -1,3 +1,4 @@
+import { OwnerArchives } from '@/features/reopening/owner-reopening-panel';
 import { lazy } from 'react';
 import { Route, Routes } from 'react-router';
 import { type AuthController } from '@/features/auth/auth-session';
@@ -11,12 +12,18 @@ const StaffReviewRoutes = lazy(
   () => import('@/features/staff-reviews/staff-review-routes'),
 );
 
+const StaffReopeningRoutes = lazy(
+  () => import('@/features/reopening/staff-reopening-routes'),
+);
+
 export default function PlayerCharacterRoutes({
   controller,
   staffReviewsEnabled,
+  reopeningEnabled,
 }: {
   controller: AuthController;
   staffReviewsEnabled: boolean;
+  reopeningEnabled: boolean;
 }) {
   const state = useAuth(controller);
   if (state.kind !== 'ready')
@@ -32,6 +39,7 @@ export default function PlayerCharacterRoutes({
             session={session}
             player={state.player}
             showStaff={staffReviewsEnabled && !!state.reviewSignal}
+            showReopeningStaff={reopeningEnabled && !!state.reopenSignal}
           />
         }
       />
@@ -41,12 +49,24 @@ export default function PlayerCharacterRoutes({
       />
       <Route
         path="characters/:characterId"
-        element={<CharacterSheetRoute session={session} />}
+        element={
+          <CharacterSheetRoute
+            session={session}
+            reopeningEnabled={reopeningEnabled}
+          />
+        }
       />
       <Route
         path="characters/:characterId/edit"
         element={<CharacterSheetRoute session={session} editing />}
       />
+      <Route path="archives" element={<OwnerArchives session={session} />} />
+      {reopeningEnabled && (
+        <Route
+          path="reopening/*"
+          element={<StaffReopeningRoutes controller={controller} />}
+        />
+      )}
       {staffReviewsEnabled && (
         <Route
           path="staff/*"

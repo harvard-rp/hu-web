@@ -1,5 +1,7 @@
 # Authenticated staff reviews
 
+This document records the original workflow. For the current HU-009F-C contracts, transitions and rollout, see [CHARACTER_POLICY_UI.md](CHARACTER_POLICY_UI.md).
+
 HU-009D implements the staff workflow against [hu-api at d1685e88](https://github.com/harvard-rp/hu-api/tree/d1685e88eb0dba43215f2e52015352c006f3bbb7). The [review contract](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/CHARACTER_REVIEWS.md) and [permission model](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/PERMISSIONS.md) are authoritative. The existing `/preview/staff` uses its own synthetic data and actions.
 
 | Screen                                   | API operation                                                                                                                                                                  |

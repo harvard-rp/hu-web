@@ -44,6 +44,9 @@ function RouteEffects() {
     if (/^\/account\/characters\/[^/]+\/edit$/.test(route))
       title = 'Modifier la fiche';
     if (route === '/account/characters/new') title = 'Créer un personnage';
+    if (route === '/account/archives') title = 'Mes archives';
+    if (route === '/account/reopening') title = 'Réouverture des archives';
+    if (route.startsWith('/account/reopening/')) title = 'Examen de l’archive';
     if (route === '/account/staff') title = 'Fiches à examiner';
     if (/^\/account\/staff\/characters\/[^/]+$/.test(route))
       title = 'Examen de la fiche';
@@ -71,10 +74,12 @@ export function App({
   auth = noAuth,
   charactersEnabled = false,
   staffReviewsEnabled = false,
+  reopeningEnabled = false,
 }: {
   auth?: AuthController;
   charactersEnabled?: boolean;
   staffReviewsEnabled?: boolean;
+  reopeningEnabled?: boolean;
 }) {
   const authEnabled = !['disabled', 'invalid-config'].includes(
     auth.getSnapshot().kind,
@@ -112,6 +117,7 @@ export function App({
                     <PlayerCharacterRoutes
                       controller={auth}
                       staffReviewsEnabled={staffReviewsEnabled}
+                      reopeningEnabled={reopeningEnabled}
                     />
                   ) : (
                     <PersonalSpacePage controller={auth} />

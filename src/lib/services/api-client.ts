@@ -1,3 +1,13 @@
+import {
+  reopening,
+  reopeningHistory,
+  staffArchive,
+  staffArchives,
+  ownerReopeningInput,
+  staffReopeningInput,
+  type OwnerReopeningInput,
+  type StaffReopeningInput,
+} from './reopening-contract';
 import { z } from 'zod';
 
 import { ApiError, apiErrorCodes } from './api-error';
@@ -11,6 +21,7 @@ import {
   clubCatalog,
   type CharacterKind,
   type EditableFields,
+  type SheetMode,
 } from './character-contract';
 import type { ApiConfig } from './api-config';
 import {
@@ -129,6 +140,41 @@ export function createApiClient(
     }
   }
 
+  async function reopen(
+    token: string,
+    signal: AbortSignal,
+    id: string,
+    input: OwnerReopeningInput | StaffReopeningInput,
+  ) {
+    const isStaff = 'decision' in input;
+    const parsed = (
+      isStaff ? staffReopeningInput : ownerReopeningInput
+    ).safeParse(input);
+    if (!parsed.success)
+      throw new ApiError('http', 400, undefined, 'INVALID_CHARACTER_REQUEST');
+    const result = await request(
+      characterPath(id, isStaff ? staffPath : charactersPath) +
+        '/reopening-requests',
+      reopening,
+      signal,
+      token,
+      'POST',
+      parsed.data,
+      isStaff ? 200 : 201,
+    );
+    if (
+      result.data.requestId !== input.requestId.toLowerCase() ||
+      result.data.decision !== (isStaff ? input.decision : null) ||
+      (isStaff
+        ? result.data.justification !== input.justification
+        : result.data.reason !== input.reason ||
+          result.data.requestedRevision !==
+            input.expectedRevision.toLowerCase())
+    )
+      throw new ApiError('response', undefined, result.requestId);
+    return result;
+  }
+
   return {
     health: (signal?: AbortSignal) => request('health', healthSchema, signal),
     me: (token: string, signal?: AbortSignal) =>
@@ -141,6 +187,51 @@ export function createApiClient(
         token,
         'POST',
       ),
+    reopen: {
+      archives: async (token: string, signal: AbortSignal, after?: string) => {
+        if (after !== undefined && !characterId.safeParse(after).success)
+          throw new ApiError(
+            'http',
+            400,
+            undefined,
+            'INVALID_CHARACTER_REQUEST',
+          );
+        const path = staffPath + '/archives';
+        return request(
+          after ? `${path}?after=${after}` : path,
+          staffArchives,
+          signal,
+          token,
+        );
+      },
+      detail: async (token: string, signal: AbortSignal, id: string) => {
+        const result = await request(
+          characterPath(id, staffPath) + '/archive',
+          staffArchive,
+          signal,
+          token,
+        );
+        if (
+          result.data.sheet.id !== id.toLowerCase() ||
+          !result.data.sheet.archivedAt
+        )
+          throw new ApiError('response', 200, result.requestId);
+        return result;
+      },
+      history: async (token: string, signal: AbortSignal, id: string) =>
+        request(
+          characterPath(id, staffPath) + '/reopening-requests',
+          reopeningHistory,
+          signal,
+          token,
+        ),
+      decide: (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+        input: StaffReopeningInput,
+      ) => reopen(token, signal, id, input),
+    },
     staff: {
       queue: async (token: string, signal: AbortSignal, after?: string) => {
         if (after !== undefined && !characterId.safeParse(after).success)
@@ -205,6 +296,11 @@ export function createApiClient(
           result.data.characterId !== id.toLowerCase() ||
           result.data.revision === body.data.expectedRevision.toLowerCase() ||
           result.data.review.decision !== body.data.decision ||
+          result.data.review.examinedRevision !==
+            body.data.expectedRevision.toLowerCase() ||
+          result.data.review.archivedCharacter !== !!result.data.archivedAt ||
+          !!result.data.review.externalEvidence !==
+            !!body.data.externalAttested ||
           result.data.review.comment !== (body.data.comment ?? null) ||
           result.data.review.assignedHouseId !==
             (body.data.houseId?.toLowerCase() ?? null) ||
@@ -216,15 +312,40 @@ export function createApiClient(
       },
     },
     characters: {
+      archives: (token: string, signal: AbortSignal) =>
+        request(charactersPath + '/archives', characterList, signal, token),
+      reopeningHistory: async (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+      ) =>
+        request(
+          characterPath(id) + '/reopening-requests',
+          reopeningHistory,
+          signal,
+          token,
+        ),
+      requestReopening: (
+        token: string,
+        signal: AbortSignal,
+        id: string,
+        input: OwnerReopeningInput,
+      ) => reopen(token, signal, id, input),
       list: (token: string, signal: AbortSignal) =>
         request(charactersPath, characterList, signal, token),
       capacity: (token: string, signal: AbortSignal) =>
         request(charactersPath + '/capacity', characterCapacity, signal, token),
       detail: async (token: string, signal: AbortSignal, id: string) =>
         request(characterPath(id), characterDetail, signal, token),
-      create: (token: string, signal: AbortSignal, kind: CharacterKind) =>
+      create: (
+        token: string,
+        signal: AbortSignal,
+        kind: CharacterKind,
+        mode: SheetMode = 'inline',
+      ) =>
         request(charactersPath, characterDetail, signal, token, 'POST', {
           kind,
+          ...(mode === 'external' && { sheetMode: mode }),
         }),
       edit: async (
         token: string,
