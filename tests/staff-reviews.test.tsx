@@ -243,9 +243,13 @@ function fixture({
           assignedHouseId: houseId ?? null,
           examinedRevision: expectedRevision,
           archivedCharacter: !!archivedAt,
-          externalEvidence: call.body.externalAttested
-            ? { url: current.externalUrl!, attested: true as const }
-            : null,
+          externalEvidence:
+            current.sheetMode === 'external'
+              ? {
+                  url: current.externalUrl!,
+                  attested: call.body.externalAttested === true,
+                }
+              : null,
         };
         current = {
           ...current,
@@ -370,6 +374,10 @@ describe('authenticated staff review', () => {
   });
 
   it('denies a player whose only authority is a teacher character', async () => {
+    await act(async () => {
+      await import('@/features/player-characters/player-character-routes');
+      await import('@/features/staff-reviews/staff-review-routes');
+    });
     const f = fixture({ staff: false });
     expect(
       await screen.findByRole('heading', { name: 'Accès staff indisponible' }),
@@ -849,6 +857,23 @@ describe('staff policy changes', () => {
       await screen.findByText('Décision enregistrée.'),
     ).toBeInTheDocument();
     expect(f.posts()[0]?.body).toMatchObject({ externalAttested: true });
+  });
+
+  it('records an inaccessible external link without attesting consultation', async () => {
+    const f = fixture({
+      sheet: {
+        ...draft,
+        sheetMode: 'external',
+        externalUrl: 'https://sites.google.com/view/fictional',
+      },
+    });
+    expect(await screen.findByRole('checkbox')).not.toBeChecked();
+    await propose(f, 'changes_requested', { comment });
+    await confirm(f);
+    expect(
+      await screen.findByText('Décision enregistrée.'),
+    ).toBeInTheDocument();
+    expect(f.posts()[0]?.body).not.toHaveProperty('externalAttested');
   });
 
   it('warns that the third refusal archives and releases a slot', async () => {

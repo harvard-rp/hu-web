@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { campusDestinations } from '@/features/campus/campus-navigation';
 import { noAuth, type AuthController } from '@/features/auth/auth-session';
+import { useAuth } from '@/features/auth/use-auth';
 import { DemoProvider } from '@/features/demo/demo-state';
 import { ThemeProvider } from '@/features/theme/theme-provider';
 import { HomePage } from '@/routes/home-page';
@@ -31,6 +32,28 @@ const titles = new Map([
     label,
   ]),
 ]);
+
+// Resolve session state before starting an import of protected features.
+function ProtectedAccount({
+  controller,
+  staffReviewsEnabled,
+  reopeningEnabled,
+}: {
+  controller: AuthController;
+  staffReviewsEnabled: boolean;
+  reopeningEnabled: boolean;
+}) {
+  const state = useAuth(controller);
+  return state.kind === 'ready' ? (
+    <PlayerCharacterRoutes
+      controller={controller}
+      staffReviewsEnabled={staffReviewsEnabled}
+      reopeningEnabled={reopeningEnabled}
+    />
+  ) : (
+    <PersonalSpacePage controller={controller} />
+  );
+}
 
 function RouteEffects() {
   const { pathname, hash } = useLocation();
@@ -114,7 +137,7 @@ export function App({
                 path={charactersEnabled ? 'account/*' : 'account'}
                 element={
                   charactersEnabled ? (
-                    <PlayerCharacterRoutes
+                    <ProtectedAccount
                       controller={auth}
                       staffReviewsEnabled={staffReviewsEnabled}
                       reopeningEnabled={reopeningEnabled}

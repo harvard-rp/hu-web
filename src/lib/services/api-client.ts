@@ -166,7 +166,13 @@ export function createApiClient(
       result.data.requestId !== input.requestId.toLowerCase() ||
       result.data.decision !== (isStaff ? input.decision : null) ||
       (isStaff
-        ? result.data.justification !== input.justification
+        ? result.data.justification !== input.justification ||
+          !result.data.decidedAt ||
+          (input.decision === 'accepted'
+            ? !result.data.resultingRevision ||
+              result.data.resultingRevision ===
+                input.expectedRevision.toLowerCase()
+            : result.data.resultingRevision !== null)
         : result.data.reason !== input.reason ||
           result.data.requestedRevision !==
             input.expectedRevision.toLowerCase())
@@ -274,6 +280,7 @@ export function createApiClient(
         signal: AbortSignal,
         id: string,
         input: ReviewInput,
+        externalUrl: string | null = null,
       ) => {
         const body = reviewInput.safeParse(input);
         if (!body.success)
@@ -299,8 +306,9 @@ export function createApiClient(
           result.data.review.examinedRevision !==
             body.data.expectedRevision.toLowerCase() ||
           result.data.review.archivedCharacter !== !!result.data.archivedAt ||
-          !!result.data.review.externalEvidence !==
-            !!body.data.externalAttested ||
+          (result.data.review.externalEvidence?.url ?? null) !== externalUrl ||
+          (result.data.review.externalEvidence?.attested ?? false) !==
+            (body.data.externalAttested ?? false) ||
           result.data.review.comment !== (body.data.comment ?? null) ||
           result.data.review.assignedHouseId !==
             (body.data.houseId?.toLowerCase() ?? null) ||

@@ -138,7 +138,11 @@ export function DecisionForm({
         'house',
         'Choisissez une House pour valider cet étudiant.',
       );
-    if (external && (!externalAvailable || !attested))
+    if (
+      external &&
+      decision !== 'changes_requested' &&
+      (!externalAvailable || !attested)
+    )
       return invalid(
         'attestation',
         'Attestez la consultation manuelle de la fiche externe avant de poursuivre.',
@@ -148,7 +152,9 @@ export function DecisionForm({
       decision,
       ...(text && { comment: text }),
       ...(canAssign && house && { houseId: house }),
-      ...(external && { externalAttested: true }),
+      ...(external &&
+        externalAvailable &&
+        attested && { externalAttested: true }),
     });
     if (!parsed.success)
       return invalid(
@@ -181,7 +187,13 @@ export function DecisionForm({
           scope,
           grant,
           ({ staff }, token, signal) =>
-            staff.decide(token, signal, sheet.id, input),
+            staff.decide(
+              token,
+              signal,
+              sheet.id,
+              input,
+              external ? sheet.externalUrl : null,
+            ),
           signal,
         );
         if (signal.aborted || grant.aborted) return;
@@ -420,8 +432,9 @@ export function DecisionForm({
                 J’atteste avoir consulté manuellement la fiche externe.
               </label>
               <p className="player-muted">
-                Si le document est inaccessible, signalez le problème. L’API
-                exige une consultation attestée pour enregistrer toute décision.
+                L’attestation est obligatoire pour valider ou refuser. Si le
+                document est inaccessible, demandez une correction et expliquez
+                le problème sans cocher la case.
               </p>
             </div>
           )}
