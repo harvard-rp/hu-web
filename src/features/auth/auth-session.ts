@@ -215,13 +215,19 @@ export function createAuthController(
         // SDK may emit SIGNED_IN again on tab focus. Accept token rotation without
         // replacing a resolved player's data or duplicating an in-flight bootstrap.
         session = next;
-        if (
-          event === 'TOKEN_REFRESHED' &&
-          !pending &&
-          state.kind === 'problem' &&
-          state.problem === 'api-unavailable'
-        )
-          void resolve(next, resolution);
+        if (event === 'TOKEN_REFRESHED') {
+          if (state.kind === 'ready') {
+            // Revalidate live capabilities without replacing the account scope.
+            // A reviewer can lose access while the sheet remains open.
+            void refreshPlayer(scope);
+          } else if (
+            !pending &&
+            state.kind === 'problem' &&
+            state.problem === 'api-unavailable'
+          ) {
+            void resolve(next, resolution);
+          }
+        }
         return;
       }
       eventRevision++;

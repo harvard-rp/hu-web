@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router';
 import { describe, expect, it } from 'vitest';
@@ -73,10 +73,17 @@ describe('Server-aligned catalogues', () => {
     expect(
       clubs.find(({ name }) => name === 'Urbex')?.description,
     ).toBeUndefined();
-    openRoute('/preview/clubs');
-    await screen.findByRole('heading', { name: 'Clubs', level: 1 });
+    // Finish the real lazy import and flush React's Suspense work before
+    // asserting the catalogue. The DOM polling budget is not a module timeout.
+    await act(async () => {
+      await import('@/app/campus-routes');
+      openRoute('/preview/clubs');
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Clubs', level: 1 }),
+    ).toBeVisible();
     const main = within(screen.getByRole('main'));
-    expect(await main.findAllByRole('heading', { level: 3 })).toHaveLength(33);
+    expect(main.getAllByRole('heading', { level: 3 })).toHaveLength(33);
     expect(main.getByText('33 clubs')).toBeVisible();
   });
 
