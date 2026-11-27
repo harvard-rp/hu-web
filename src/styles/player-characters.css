@@ -268,3 +268,15 @@
     grid-row: 2;
   }
 }
+
+.staff-attestation {
+  display: flex;
+  align-items: start;
+  gap: 0.55rem;
+}
+
+.staff-attestation input {
+  flex: none;
+  margin-top: 0.25em;
+  accent-color: var(--primary);
+}

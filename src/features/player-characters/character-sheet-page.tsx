@@ -1,3 +1,5 @@
+import { SheetModeChoice } from './sheet-mode';
+import { OwnerReopeningPanel } from '@/features/reopening/owner-reopening-panel';
 import { ReviewHistory, SheetFields } from './sheet-display';
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -28,6 +30,7 @@ import {
 import {
   catalogName,
   changedFields,
+  editorialHint,
   fieldConstraint,
   fieldsFor,
   missingForSubmission,
@@ -42,9 +45,11 @@ const back = { to: '/account', label: 'Retour à mes personnages' };
 export function CharacterSheetRoute({
   session,
   editing = false,
+  reopeningEnabled = false,
 }: {
   session: PlayerSession;
   editing?: boolean;
+  reopeningEnabled?: boolean;
 }) {
   const id = useParams().characterId;
   if (!idSchema.safeParse(id).success || !id)
@@ -55,6 +60,7 @@ export function CharacterSheetRoute({
       id={id}
       session={session}
       editing={editing}
+      reopeningEnabled={reopeningEnabled}
     />
   );
 }
@@ -63,10 +69,12 @@ function CharacterSheet({
   id,
   session,
   editing,
+  reopeningEnabled,
 }: {
   id: string;
   session: PlayerSession;
   editing: boolean;
+  reopeningEnabled: boolean;
 }) {
   const { controller, scope } = session;
   const load = useCallback(
@@ -125,6 +133,7 @@ function CharacterSheet({
       reviews={reviews}
       session={session}
       reload={retry}
+      reopeningEnabled={reopeningEnabled}
     />
   );
 }
@@ -145,11 +154,16 @@ function SheetDetails({
   reviews,
   session,
   reload,
-}: SheetProps & { lockedEditor: boolean; reload: () => void }) {
+  reopeningEnabled,
+}: SheetProps & {
+  lockedEditor: boolean;
+  reload: () => void;
+  reopeningEnabled: boolean;
+}) {
   const [sheet, setSheet] = useState(initial);
   const [submissionAttempt, setSubmissionAttempt] = useState(false);
   const mutation = usePlayerMutation(session);
-  const missing = missingForSubmission(sheet);
+  const missing = missingForSubmission(sheet, programs);
   const stale =
     mutation.failure?.error instanceof ApiError &&
     ['CHARACTER_REVISION_CONFLICT', 'CHARACTER_LOCKED'].includes(
@@ -170,29 +184,62 @@ function SheetDetails({
   }
 
   return (
-    <Screen title={characterName(sheet)} back={back}>
+    <Screen
+      title={characterName(sheet)}
+      back={
+        sheet.archivedAt
+          ? { to: '/account/archives', label: 'Retour aux archives' }
+          : back
+      }
+    >
       <div className="player-section-bar">
         <div>
           <p className="player-muted">{kindLabel[sheet.kind]}</p>
           <CharacterState character={sheet} />
         </div>
-        {canEdit(sheet) && (
+        {!sheet.archivedAt && (canEdit(sheet) || sheet.actions.canSubmit) && (
           <div className="player-actions">
-            <Button asChild variant="outline">
-              <Link to={`/account/characters/${sheet.id}/edit`}>
-                Modifier la fiche
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={mutation.pending || stale}
-            >
-              Soumettre la fiche au staff
-            </Button>
+            {canEdit(sheet) && (
+              <Button asChild variant="outline">
+                <Link to={`/account/characters/${sheet.id}/edit`}>
+                  Modifier la fiche
+                </Link>
+              </Button>
+            )}
+            {sheet.actions.canSubmit && (
+              <Button
+                type="button"
+                onClick={submit}
+                disabled={mutation.pending || stale}
+              >
+                Soumettre la fiche au staff
+              </Button>
+            )}
           </div>
         )}
       </div>
+      {sheet.archivedAt && (
+        <p>
+          Cette fiche est en lecture seule et ne compte plus dans vos
+          emplacements.
+        </p>
+      )}
+      {!sheet.archivedAt &&
+        sheet.validationStatus === 'rejected' &&
+        sheet.refusalCount > 0 &&
+        sheet.refusalCount < 3 &&
+        canEdit(sheet) && (
+          <p className="player-muted">
+            {sheet.refusalCount === 1
+              ? 'Premier refus. Vous pouvez corriger la fiche et la soumettre à nouveau.'
+              : 'Deuxième refus. Vous pouvez corriger la fiche. Le prochain refus l’archivera.'}
+          </p>
+        )}
+      {!sheet.archivedAt && sheet.refusalCount >= 3 && canEdit(sheet) && (
+        <p className="player-notice">
+          Le prochain refus archivera de nouveau cette fiche.
+        </p>
+      )}
       {lockedEditor && <p role="status">Cette fiche est verrouillée.</p>}
       {submissionAttempt && missing.length > 0 && (
         <p className="player-notice" role="alert">
@@ -214,6 +261,14 @@ function SheetDetails({
         <SheetFields sheet={sheet} houses={houses} programs={programs} />
       </section>
       <ReviewHistory reviews={reviews} houses={houses} />
+      {reopeningEnabled && (sheet.archivedAt || sheet.refusalCount >= 3) && (
+        <OwnerReopeningPanel
+          key={sheet.revision}
+          session={session}
+          sheet={sheet}
+          reload={reload}
+        />
+      )}
     </Screen>
   );
 }
@@ -236,7 +291,7 @@ function SheetEditor({
   const navigate = useNavigate();
   const changes = changedFields(sheet, values);
   const dirty = Object.keys(changes).length > 0;
-  const missing = missingForSubmission(sheet);
+  const missing = missingForSubmission(sheet, programs);
   const guard = useExitGuard(dirty || mutation.pending, session.scope.signal);
   const detailPath = `/account/characters/${sheet.id}`;
   const needsReload =
@@ -358,6 +413,53 @@ function SheetEditor({
           className="player-form"
         >
           {sheetSections.map(({ title, fields }) => {
+            if (title === 'Format de la fiche')
+              return (
+                <section key={title} className="player-surface player-panel">
+                  <SheetModeChoice
+                    value={
+                      values.sheetMode === 'external' ? 'external' : 'inline'
+                    }
+                    change={(mode) => change('sheetMode', mode)}
+                  />
+                  {values.sheetMode === 'external' ? (
+                    <div className="player-field">
+                      <Label htmlFor="externalUrl">Lien de consultation</Label>
+                      <Input
+                        id="externalUrl"
+                        type="url"
+                        value={values.externalUrl}
+                        aria-invalid={
+                          invalid.includes('externalUrl') || undefined
+                        }
+                        aria-describedby="external-url-hint"
+                        onChange={(event) =>
+                          change('externalUrl', event.target.value)
+                        }
+                      />
+                      <p id="external-url-hint" className="player-muted">
+                        Partagez un lien de consultation Canva, Google Docs ou
+                        Google Sites. Vérifiez que le staff peut ouvrir le lien
+                        avec un accès en lecture.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {sheet.externalUrl && (
+                        <p>
+                          Le prochain enregistrement supprimera le lien externe.
+                          Vos textes seront conservés.
+                        </p>
+                      )}
+                      <p className="player-muted">
+                        Seuls les retours à la ligne saisis comptent. Les lignes
+                        vides et les retours automatiques à l’écran sont
+                        ignorés.
+                      </p>
+                    </>
+                  )}
+                </section>
+              );
             const visible = fieldsFor(sheet.kind, fields);
             const showHouse =
               title === 'Université' &&
@@ -369,12 +471,15 @@ function SheetEditor({
                 <div className="player-field-grid">
                   {visible.map(({ field, label, control }) => {
                     const constraint = fieldConstraint(field);
+                    const counter =
+                      values.sheetMode === 'inline'
+                        ? editorialHint(field, values[field])
+                        : undefined;
                     const error = invalid.includes(field);
                     const hint = error
                       ? `Valeur invalide. ${constraint ?? 'Vérifiez le format.'}`
-                      : control === 'list'
-                        ? constraint
-                        : undefined;
+                      : (counter ??
+                        (control === 'list' ? constraint : undefined));
                     const props = {
                       id: field,
                       value: values[field],
@@ -446,6 +551,7 @@ function SheetEditor({
                           <p
                             className={error ? 'field-error' : 'player-muted'}
                             id={`${field}-hint`}
+                            aria-live={counter ? 'polite' : undefined}
                           >
                             {hint}
                           </p>
@@ -546,7 +652,10 @@ function SheetEditor({
               type="button"
               variant="outline"
               disabled={
-                dirty || needsReload || mutation.pending || !canEdit(sheet)
+                dirty ||
+                needsReload ||
+                mutation.pending ||
+                !sheet.actions.canSubmit
               }
               onClick={submit}
             >

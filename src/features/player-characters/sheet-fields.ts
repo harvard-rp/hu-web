@@ -10,6 +10,8 @@ import {
   type EditableFields,
 } from '@/lib/services/character-contract';
 
+import { isExternalSheetUrl } from '@/lib/services/external-sheet';
+
 export type Field = keyof EditableFields;
 type FieldInfo = {
   field: Field;
@@ -18,6 +20,13 @@ type FieldInfo = {
 };
 
 export const sheetSections = [
+  {
+    title: 'Format de la fiche',
+    fields: [
+      { field: 'sheetMode', label: 'Mode de fiche' },
+      { field: 'externalUrl', label: 'Lien de consultation' },
+    ],
+  },
   {
     title: 'Identité',
     fields: [
@@ -130,7 +139,11 @@ export function changedFields(sheet: CharacterDetail, values: SheetValues) {
   const original = sheetValues(sheet);
   return Object.fromEntries(
     fieldsFor(sheet.kind, fields)
-      .filter(({ field }) => values[field] !== original[field])
+      .filter(
+        ({ field }) =>
+          !(field === 'externalUrl' && values.sheetMode === 'inline') &&
+          values[field] !== original[field],
+      )
       .flatMap(({ field, control }) => {
         const value = fieldValue(values[field], control);
         const saved = sheet[field];
@@ -173,18 +186,61 @@ export function fieldConstraint(field: Field) {
   return undefined;
 }
 
-export function missingForSubmission(sheet: CharacterDetail) {
-  const required = [
-    'firstName',
-    'lastName',
-    'personality',
-    'physicalDescription',
-    'faceClaim',
-    'backstory',
-  ] as const;
-  const missing: Field[] = required.filter((field) => !sheet[field]?.trim());
-  if (sheet.kind === 'student' && !sheet.programId) missing.push('programId');
-  return missing.map((field) => fieldLabels[field]);
+// PostgreSQL normalizes CRLF and CR to LF. Its btrim whitelist differs from JS trim.
+const lineWhitespace = new Set(
+  '\t\v\f \u0085\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF',
+);
+export function editorialLines(value: string | null) {
+  return (value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .filter((line) =>
+      [...line].some((character) => !lineWhitespace.has(character)),
+    ).length;
+}
+export const editorialLimits = {
+  physicalDescription: { min: 5, max: Infinity, label: 'au moins 5 lignes' },
+  personality: { min: 5, max: 10, label: '5 à 10 lignes' },
+  backstory: { min: 10, max: 15, label: '10 à 15 lignes' },
+};
+type EditorialField = keyof typeof editorialLimits;
+export function editorialHint(field: Field, value: string) {
+  if (!Object.hasOwn(editorialLimits, field)) return undefined;
+  const rule = editorialLimits[field as EditorialField];
+  return `${editorialLines(value)} ligne(s) · ${rule.label}`;
+}
+
+export function missingForSubmission(
+  sheet: CharacterDetail,
+  programs: CharacterCatalog,
+) {
+  const missing: string[] = [];
+  for (const field of ['firstName', 'lastName', 'faceClaim'] as const) {
+    if (!sheet[field]?.trim()) missing.push(fieldLabels[field]);
+  }
+  if (sheet.age === null) missing.push(fieldLabels.age);
+  if (!sheet.birthDate) missing.push(fieldLabels.birthDate);
+  if (
+    (sheet.kind === 'student' || sheet.programId) &&
+    !programs.some(({ id }) => id === sheet.programId)
+  )
+    missing.push('Filière active');
+  if (
+    (sheet.kind === 'teacher' || sheet.kind === 'staff_member') &&
+    !sheet.occupation?.trim()
+  )
+    missing.push(fieldLabels.occupation);
+  if (sheet.sheetMode === 'inline') {
+    for (const field of Object.keys(editorialLimits) as EditorialField[]) {
+      const { min, max, label } = editorialLimits[field];
+      const count = editorialLines(sheet[field]);
+      if (count < min || count > max)
+        missing.push(`${fieldLabels[field]} (${label})`);
+    }
+  } else if (!sheet.externalUrl || !isExternalSheetUrl(sheet.externalUrl)) {
+    missing.push('Lien de consultation valide');
+  }
+  return missing;
 }
 
 export function catalogName(

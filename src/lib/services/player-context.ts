@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 export const playerContextSchema = z.strictObject({
   playerId: z.uuid(),
-  capabilities: z.array(z.enum(['characters.review', 'boosts.manage'])),
+  capabilities: z.array(
+    z.enum(['characters.review', 'boosts.manage', 'characters.reopen']),
+  ),
   characters: z.array(
     z.strictObject({
       id: z.uuid(),

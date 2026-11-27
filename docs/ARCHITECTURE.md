@@ -28,3 +28,5 @@ The gated account domain adds owned character routes and loads them on demand. I
 Cloudflare Pages' [SPA fallback](https://developers.cloudflare.com/pages/configuration/serving-pages/#single-page-application-spa-rendering) covers direct normal paths. GitHub Pages receives the project root path for a direct hash URL and serves `index.html` there. The application catch-all handles unknown routes.
 
 The authenticated staff review domain uses the same HTTP client and a capability-specific cancellation scope. It shares the player sheet reader and keeps the synthetic staff prototype independent. See [STAFF_REVIEWS.md](STAFF_REVIEWS.md).
+
+See [hybrid character sheets and reopening](CHARACTER_POLICY_UI.md) for HU-009F-C and its coordinated rollout.

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isExternalSheetUrl } from './external-sheet';
 
 // Mirrors hu-api's character-sheet and owner review schemas.
 export const characterKind = z.enum([
@@ -55,7 +56,11 @@ const rpText = (limit: number) => rpString(limit).nullable().optional();
 const rpList = (limit: number) =>
   z.array(rpString(limit)).max(listItemCount).nullable().optional();
 
+export const sheetMode = z.enum(['inline', 'external']);
+export type SheetMode = z.infer<typeof sheetMode>;
 export const editableFields = z.strictObject({
+  sheetMode: sheetMode.optional(),
+  externalUrl: z.string().refine(isExternalSheetUrl).nullable().optional(),
   firstName: rpText(textLimits.firstName),
   lastName: rpText(textLimits.lastName),
   nickname: rpText(textLimits.nickname),
@@ -82,6 +87,14 @@ const summary = z.strictObject({
   id: characterId,
   kind: characterKind,
   validationStatus,
+  sheetMode,
+  refusalCount: z.number().int().nonnegative(),
+  archivedAt: dateTime.nullable(),
+  actions: z.strictObject({
+    canEdit: z.boolean(),
+    canSubmit: z.boolean(),
+    canRequestReopening: z.boolean(),
+  }),
   useStatus,
   revision: z.uuid(),
   createdAt: dateTime,
@@ -93,6 +106,7 @@ const summary = z.strictObject({
 export const characterList = z.array(summary);
 export const characterDetail = summary.extend({
   houseId: z.uuid().nullable(),
+  externalUrl: z.string().max(2048).nullable(),
   programId: z.uuid().nullable(),
   isScholarshipHolder: z.boolean().nullable(),
   age: age.nullable(),
@@ -136,6 +150,11 @@ export const characterReview = z.strictObject({
   reviewedAt: dateTime,
   comment: nullableText,
   assignedHouseId: z.uuid().nullable(),
+  examinedRevision: z.uuid().nullable(),
+  archivedCharacter: z.boolean(),
+  externalEvidence: z
+    .strictObject({ url: z.string(), attested: z.literal(true) })
+    .nullable(),
 });
 export const characterReviews = z.array(characterReview);
 

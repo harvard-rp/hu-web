@@ -1,5 +1,7 @@
 # Authenticated player characters
 
+This document records the original workflow. For the current HU-009F-C contracts, transitions and rollout, see [CHARACTER_POLICY_UI.md](CHARACTER_POLICY_UI.md).
+
 HU-009C implements the player-owned workflow against [hu-api at d1685e88](https://github.com/harvard-rp/hu-api/tree/d1685e88eb0dba43215f2e52015352c006f3bbb7). The source of truth is the backend's [character contract](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/CHARACTERS.md), [owner review contract](https://github.com/harvard-rp/hu-api/blob/d1685e88eb0dba43215f2e52015352c006f3bbb7/docs/CHARACTER_REVIEWS.md) and OpenAPI document. The feature uses the existing Discord and Supabase Auth session and the Hono API. The independent `/preview` routes retain their synthetic catalogue and state.
 
 ## Routes

@@ -1,3 +1,4 @@
+import { isExternalSheetUrl } from '@/lib/services/external-sheet';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -12,6 +13,8 @@ import type {
 import { createApiClient } from '@/lib/services/api-client';
 import type { CharacterDetail } from '@/lib/services/character-contract';
 import {
+  editorialLines,
+  missingForSubmission,
   changedFields,
   sheetValues,
   validatePatch,
@@ -43,6 +46,11 @@ const draft: CharacterDetail = {
   id,
   kind: 'student',
   validationStatus: 'draft',
+  sheetMode: 'inline',
+  refusalCount: 0,
+  archivedAt: null,
+  actions: { canEdit: true, canSubmit: true, canRequestReopening: false },
+  externalUrl: null,
   useStatus: 'active',
   revision: initialRevision,
   createdAt: timestamp,
@@ -53,18 +61,18 @@ const draft: CharacterDetail = {
   houseId: null,
   programId,
   isScholarshipHolder: true,
-  age: null,
+  age: 21,
   sexualOrientation: null,
-  birthDate: null,
+  birthDate: '2004-11-27',
   birthPlace: null,
   origins: null,
   residence: null,
   financialSituation: null,
   occupation: null,
-  personality: 'Observatrice.',
-  physicalDescription: 'Porte des lunettes.',
+  personality: Array(5).fill('Observatrice.').join('\n'),
+  physicalDescription: Array(5).fill('Porte des lunettes.').join('\n'),
   faceClaim: 'Référence fictive.',
-  backstory: 'Étudie les archives.',
+  backstory: Array(10).fill('Étudie les archives.').join('\n'),
   anecdotes: null,
   contentWarnings: ['Solitude'],
   rpLinks: ['https://exemple.invalid/texte'],
@@ -74,6 +82,10 @@ function summary(sheet: CharacterDetail) {
     id,
     kind,
     validationStatus,
+    sheetMode,
+    refusalCount,
+    archivedAt,
+    actions,
     useStatus,
     revision,
     createdAt,
@@ -86,6 +98,10 @@ function summary(sheet: CharacterDetail) {
     id,
     kind,
     validationStatus,
+    sheetMode,
+    refusalCount,
+    archivedAt,
+    actions,
     useStatus,
     revision,
     createdAt,
@@ -111,6 +127,7 @@ function fixture({
   capacity = { total: 7, used: 1, available: 6 },
   signedIn = true,
   enabled = true,
+  reopeningEnabled = false,
 }: {
   route?: string;
   sheet?: CharacterDetail;
@@ -118,6 +135,7 @@ function fixture({
   capacity?: { total: number; used: number; available: number };
   signedIn?: boolean;
   enabled?: boolean;
+  reopeningEnabled?: boolean;
 } = {}) {
   const calls: Call[] = [];
   let current = sheet;
@@ -140,13 +158,23 @@ function fixture({
         };
         const { expectedRevision, ...fields } = body;
         expect(expectedRevision).toBe(current.revision);
-        current = { ...current, ...fields, revision: nextRevision };
+        current = {
+          ...current,
+          ...fields,
+          ...(fields.sheetMode === 'inline' && { externalUrl: null }),
+          revision: nextRevision,
+        };
         return Response.json(current);
       }
       if (call.path === apiDetail + '/submit') {
         current = {
           ...current,
           validationStatus: 'submitted',
+          actions: {
+            canEdit: false,
+            canSubmit: false,
+            canRequestReopening: false,
+          },
           revision: uuid(8),
         };
         return Response.json(current);
@@ -170,6 +198,9 @@ function fixture({
       current = {
         ...draft,
         kind: (request.body as { kind: CharacterDetail['kind'] }).kind,
+        sheetMode:
+          (request.body as { sheetMode?: CharacterDetail['sheetMode'] })
+            .sheetMode ?? 'inline',
       };
       return Response.json(current, { status: 201 });
     }
@@ -199,7 +230,18 @@ function fixture({
     redirectTo: 'https://web.example/auth/callback',
   });
   const router = createMemoryRouter(
-    [{ path: '*', element: <App auth={auth} charactersEnabled={enabled} /> }],
+    [
+      {
+        path: '*',
+        element: (
+          <App
+            auth={auth}
+            charactersEnabled={enabled}
+            reopeningEnabled={reopeningEnabled}
+          />
+        ),
+      },
+    ],
     { initialEntries: [route] },
   );
   const user = userEvent.setup();
@@ -283,6 +325,11 @@ describe('Player character routes', () => {
           ...draft,
           useStatus: 'suspended',
           validationStatus: 'approved',
+          actions: {
+            canEdit: false,
+            canSubmit: false,
+            canRequestReopening: false,
+          },
         },
       });
       expect(await screen.findByText(message)).toBeVisible();
@@ -402,6 +449,9 @@ describe('Player character routes', () => {
                   reviewedAt: timestamp,
                   comment: 'Préciser le projet universitaire.',
                   assignedHouseId: null,
+                  examinedRevision: null,
+                  archivedCharacter: false,
+                  externalEvidence: null,
                 },
               ])
             : undefined,
@@ -511,12 +561,20 @@ describe('Player character routes', () => {
             reviewedAt: timestamp,
             comment,
             assignedHouseId: houseId,
+            examinedRevision: null,
+            archivedCharacter: false,
+            externalEvidence: null,
           },
         ]);
       if (call.path.endsWith('/submit')) {
         return Response.json({
           ...draft,
           validationStatus: 'submitted',
+          actions: {
+            canEdit: false,
+            canSubmit: false,
+            canRequestReopening: false,
+          },
           useStatus: 'suspended',
           revision: nextRevision,
         });
@@ -544,7 +602,19 @@ describe('Player character routes', () => {
     async (validationStatus) => {
       fixture({
         route: detail + '/edit',
-        sheet: { ...draft, validationStatus },
+        sheet: {
+          ...draft,
+          validationStatus,
+          actions: {
+            canEdit: false,
+            canSubmit: false,
+            canRequestReopening: false,
+          },
+          ...(validationStatus === 'rejected' && {
+            archivedAt: timestamp,
+            refusalCount: 3,
+          }),
+        },
       });
       expect(
         await screen.findByText('Cette fiche est verrouillée.'),
@@ -679,5 +749,231 @@ describe('Sheet field validation', () => {
         rpLinks: Array(12).fill('😀'.repeat(300)),
       }),
     ).toMatchObject({ kind: 'too-large' });
+  });
+});
+
+describe('hybrid player sheets and archives', () => {
+  const externalUrl =
+    'https://docs.google.com/document/u/3/d/Character_123/view?x=%23#section';
+  const archive = {
+    ...draft,
+    validationStatus: 'rejected' as const,
+    archivedAt: timestamp,
+    refusalCount: 3,
+    actions: { canEdit: false, canSubmit: false, canRequestReopening: true },
+  };
+  it.each(['student', 'teacher', 'staff_member', 'citizen'] as const)(
+    'checks both submission modes for %s',
+    (kind) => {
+      const sheet = {
+        ...draft,
+        kind,
+        programId: kind === 'student' ? programId : null,
+        occupation: 'Archives',
+      };
+      expect(missingForSubmission(sheet, programs)).toEqual([]);
+      expect(
+        missingForSubmission(
+          {
+            ...sheet,
+            sheetMode: 'external',
+            externalUrl,
+            personality: null,
+            physicalDescription: null,
+            backstory: null,
+          },
+          programs,
+        ),
+      ).toEqual([]);
+      expect(
+        missingForSubmission(
+          { ...sheet, age: null, birthDate: null, faceClaim: null },
+          programs,
+        ),
+      ).toEqual(['Face claim', 'Âge', 'Date de naissance']);
+      if (kind === 'teacher' || kind === 'staff_member')
+        expect(
+          missingForSubmission({ ...sheet, occupation: null }, programs),
+        ).toContain('Fonction');
+    },
+  );
+  it('mirrors SQL line normalization and inclusive bounds', () => {
+    expect(
+      editorialLines(
+        ' \r\n\u0085\r\t\v\f\r\nPremière\rDeuxième\n\u2029\n\u001c',
+      ),
+    ).toBe(3);
+    const narrative = (count: number) =>
+      Array(count).fill('Un détail.').join('\r\n');
+    const forCounts = (
+      physical: number,
+      personality: number,
+      backstory: number,
+    ) =>
+      missingForSubmission(
+        {
+          ...draft,
+          physicalDescription: narrative(physical),
+          personality: narrative(personality),
+          backstory: narrative(backstory),
+        },
+        programs,
+      );
+    expect(forCounts(5, 5, 10)).toEqual([]);
+    expect(forCounts(20, 10, 15)).toEqual([]);
+    expect(forCounts(4, 4, 9)).toHaveLength(3);
+    expect(forCounts(5, 11, 16)).toHaveLength(2);
+  });
+  it.each([
+    'https://www.canva.com/design/abc/view',
+    'https://www.canva.com/design/abc/xyz/view?one=2',
+    'https://docs.google.com/document/d/a/edit',
+    'https://docs.google.com/document/u/0/d/e/abc/pub',
+    'https://sites.google.com/view/site/a-b/',
+    externalUrl,
+  ])('allows pinned provider URL %s', (url) =>
+    expect(isExternalSheetUrl(url)).toBe(true),
+  );
+  it.each([
+    'http://www.canva.com/design/abc/view',
+    'https://WWW.canva.com/design/abc/view',
+    'https://docs.google.com.evil.test/document/d/abc/view',
+    'https://user@docs.google.com/document/d/abc/view',
+    'https://docs.google.com:443/document/d/abc/view',
+    'https://docs.google.com/document/d/%61bc/view',
+    'https://docs.google.com/document/d/abc/view?x=%x0',
+    'https://docs.google.com/document/d/abc/view\n',
+    'https://sites.google.com/view/site/../other',
+    'https://www.canva.com/design/abc/edit',
+    'https://sites.google.com/view/site?x=' + 'x'.repeat(2050),
+  ])('rejects unsupported URL %s', (url) =>
+    expect(isExternalSheetUrl(url)).toBe(false),
+  );
+
+  it('creates an incomplete external draft and returns to inline without overwriting narrative', async () => {
+    const { user, calls } = fixture({ route: '/account/characters/new' });
+    await user.click(
+      await screen.findByLabelText('Utiliser une fiche externe'),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Confirmer la création' }),
+    );
+    const url = await screen.findByLabelText('Lien de consultation');
+    await user.type(url, externalUrl);
+    await user.click(
+      screen.getByRole('button', { name: 'Enregistrer le brouillon' }),
+    );
+    await screen.findByText('Fiche enregistrée.');
+    await user.click(screen.getByLabelText('Rédiger ma fiche sur le site'));
+    expect(screen.getByText(/supprimera le lien externe/)).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Enregistrer le brouillon' }),
+    );
+    await screen.findByText('Fiche enregistrée.');
+    expect(
+      calls.filter(({ method }) => method === 'PATCH').map(({ body }) => body),
+    ).toEqual([
+      { expectedRevision: initialRevision, externalUrl },
+      { expectedRevision: nextRevision, sheetMode: 'inline' },
+    ]);
+  });
+
+  it.each([1, 2, 3])(
+    'uses server actions for a current refusal count of %s',
+    async (refusalCount) => {
+      fixture({
+        route: detail,
+        sheet: { ...draft, validationStatus: 'rejected', refusalCount },
+      });
+      expect(await screen.findByText(`${refusalCount} refus`)).toBeVisible();
+      expect(
+        screen.getByRole('link', { name: 'Modifier la fiche' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Soumettre la fiche au staff' }),
+      ).toBeVisible();
+      if (refusalCount === 3)
+        expect(screen.getByText(/prochain refus archivera/)).toBeVisible();
+    },
+  );
+
+  it('loads a read-only owned archive and retries an uncertain request at full capacity with the same UUID', async () => {
+    const f = fixture({
+      route: '/account/archives',
+      sheet: archive,
+      reopeningEnabled: true,
+      capacity: { total: 5, used: 5, available: 0 },
+    });
+    let sent:
+      | { requestId: string; reason: string; expectedRevision: string }
+      | undefined;
+    let pending = false;
+    let attempts = 0;
+    const path = apiDetail + '/reopening-requests';
+    const timeline = () =>
+      pending && sent
+        ? [
+            {
+              requestId: sent.requestId,
+              requestedRevision: sent.expectedRevision,
+              requestedAt: timestamp,
+              reason: sent.reason,
+              decision: null,
+              justification: null,
+              decidedAt: null,
+              resultingRevision: null,
+            },
+          ]
+        : [];
+    f.handle.mockImplementation(({ path: requested, method, body }) => {
+      if (requested === listPath + '/archives')
+        return Response.json([summary(archive)]);
+      if (requested === path && method === 'GET')
+        return Response.json(timeline());
+      if (requested === path && method === 'POST') {
+        attempts++;
+        const input = body as NonNullable<typeof sent>;
+        if (sent) expect(input).toEqual(sent);
+        sent = input;
+        if (attempts === 1) return fail(503, 'SERVICE_UNAVAILABLE');
+        pending = true;
+        return Response.json(timeline()[0], { status: 201 });
+      }
+    });
+    await f.user.click(
+      await screen.findByRole('link', { name: /Consulter la fiche archivée/ }),
+    );
+    expect(await screen.findByText(/en lecture seule/)).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: 'Modifier la fiche' }),
+    ).not.toBeInTheDocument();
+    await f.user.type(
+      await screen.findByLabelText('Motif de la demande'),
+      'Je souhaite reprendre cette fiche.',
+    );
+    async function send() {
+      await f.user.click(
+        screen.getByRole('button', { name: 'Vérifier la demande' }),
+      );
+      await f.user.click(
+        within(await screen.findByRole('dialog')).getByRole('button', {
+          name: 'Confirmer l’envoi',
+        }),
+      );
+    }
+    await send();
+    await f.user.click(
+      await screen.findByRole('button', {
+        name: 'Vérifier la fiche et l’historique',
+      }),
+    );
+    await screen.findByText(/Vous pouvez confirmer une nouvelle tentative/);
+    expect(attempts).toBe(1);
+    await send();
+    expect(
+      await screen.findByText('En attente', { exact: true }),
+    ).toBeVisible();
+    expect(attempts).toBe(2);
+    expect(sent?.requestId).toMatch(/^[a-f\d-]{36}$/);
   });
 });

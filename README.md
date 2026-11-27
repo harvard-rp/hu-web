@@ -47,3 +47,5 @@ The [player character workflow](docs/PLAYER_CHARACTERS.md) documents the authent
 See [architecture](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [visual and catalogue sources](docs/DEMO_SOURCES.md), [decisions](docs/DECISIONS.md) and [roadmap](docs/ROADMAP.md).
 
 The [authenticated staff review workspace](docs/STAFF_REVIEWS.md) requires both character and staff review flags and the effective `characters.review` capability. Both flags default to off and GitHub Pages forces them off.
+
+See [hybrid character sheets and reopening](docs/CHARACTER_POLICY_UI.md) for HU-009F-C and its coordinated rollout.

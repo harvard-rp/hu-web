@@ -1,3 +1,5 @@
+import { ExternalSheetLink } from '@/features/player-characters/sheet-mode';
+import { isExternalSheetUrl } from '@/lib/services/external-sheet';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
@@ -76,12 +78,13 @@ export function DecisionForm({
   onClosed: () => void;
 }) {
   const [decision, setDecision] = useState<ReviewInput['decision'] | ''>('');
+  const [attested, setAttested] = useState(false);
   const [comment, setComment] = useState('');
   const [house, setHouse] = useState('');
   const [confirmation, setConfirmation] = useState<ReviewInput>();
   const [problem, setProblem] = useState<{
     message: string;
-    field: 'decision' | 'comment' | 'house';
+    field: 'decision' | 'comment' | 'house' | 'attestation';
   }>();
   const [failure, setFailure] = useState<unknown>();
   const [recovery, setRecovery] = useState<Recovery>();
@@ -90,9 +93,21 @@ export function DecisionForm({
   const navigate = useNavigate();
   const { controller, scope, grant } = session;
   const guard = useExitGuard(!!comment || busy, grant);
-  const canAssign =
-    sheet.kind === 'student' &&
-    (decision === 'approved' || decision === 'changes_requested');
+  const canAssign = sheet.kind === 'student' && decision === 'approved';
+  const external = sheet.sheetMode === 'external';
+  const externalAvailable =
+    !!sheet.externalUrl && isExternalSheetUrl(sheet.externalUrl);
+  const archivesOnRefusal = sheet.refusalCount >= 2;
+  const consequence =
+    decision === 'rejected'
+      ? archivesOnRefusal
+        ? 'Ce refus archivera la fiche et libérera un emplacement.'
+        : `Refus ${sheet.refusalCount + 1} sur 3 avant archivage. Le joueur pourra corriger et soumettre à nouveau.`
+      : decision === 'changes_requested'
+        ? 'Le joueur pourra corriger et soumettre à nouveau. Cette décision ne compte pas comme un refus.'
+        : decision === 'approved'
+          ? 'La fiche sera validée. Une suspension éventuelle reste en vigueur.'
+          : '';
   const requiresHouse =
     sheet.kind === 'student' && decision === 'approved' && !sheet.houseId;
   const requiresComment =
@@ -100,7 +115,10 @@ export function DecisionForm({
 
   useEffect(() => () => current.current?.abort(), []);
 
-  function invalid(field: 'decision' | 'comment' | 'house', message: string) {
+  function invalid(
+    field: 'decision' | 'comment' | 'house' | 'attestation',
+    message: string,
+  ) {
     setProblem({ field, message });
     document.getElementById('staff-' + field)?.focus();
   }
@@ -120,11 +138,17 @@ export function DecisionForm({
         'house',
         'Choisissez une House pour valider cet étudiant.',
       );
+    if (external && (!externalAvailable || !attested))
+      return invalid(
+        'attestation',
+        'Attestez la consultation manuelle de la fiche externe avant de poursuivre.',
+      );
     const parsed = reviewInput.safeParse({
       expectedRevision: sheet.revision,
       decision,
       ...(text && { comment: text }),
       ...(canAssign && house && { houseId: house }),
+      ...(external && { externalAttested: true }),
     });
     if (!parsed.success)
       return invalid(
@@ -153,7 +177,7 @@ export function DecisionForm({
       setConfirmation(undefined);
       setRecovery(undefined);
       try {
-        await controller.staffRequest(
+        const { data } = await controller.staffRequest(
           scope,
           grant,
           ({ staff }, token, signal) =>
@@ -164,7 +188,7 @@ export function DecisionForm({
         guard.allowExit();
         void navigate(staffQueuePath, {
           replace: true,
-          state: { reviewRecorded: true },
+          state: { reviewRecorded: true, characterArchived: !!data.archivedAt },
         });
       } catch (error) {
         if (signal.aborted || grant.aborted) return;
@@ -351,7 +375,7 @@ export function DecisionForm({
                   selection === 'rejected'
                 ) {
                   setDecision(selection);
-                  if (!selection || selection === 'rejected') setHouse('');
+                  if (selection !== 'approved') setHouse('');
                   setProblem(undefined);
                 }
               }}
@@ -364,6 +388,43 @@ export function DecisionForm({
               <option value="rejected">Refuser</option>
             </select>
           </div>
+          <p className="player-muted">
+            Refus enregistrés · {sheet.refusalCount}
+          </p>
+          {consequence && (
+            <p
+              className={
+                decision === 'rejected' && archivesOnRefusal
+                  ? 'player-notice'
+                  : 'player-muted'
+              }
+            >
+              {consequence}
+            </p>
+          )}
+          {external && (
+            <div className="player-field">
+              <ExternalSheetLink url={sheet.externalUrl} />
+              <label className="staff-attestation">
+                <input
+                  id="staff-attestation"
+                  type="checkbox"
+                  checked={attested}
+                  disabled={!externalAvailable}
+                  aria-invalid={problem?.field === 'attestation' || undefined}
+                  onChange={(event) => {
+                    setAttested(event.target.checked);
+                    setProblem(undefined);
+                  }}
+                />
+                J’atteste avoir consulté manuellement la fiche externe.
+              </label>
+              <p className="player-muted">
+                Si le document est inaccessible, signalez le problème. L’API
+                exige une consultation attestée pour enregistrer toute décision.
+              </p>
+            </div>
+          )}
           {canAssign && (
             <div className="player-field">
               <Label htmlFor="staff-house">
@@ -444,6 +505,7 @@ export function DecisionForm({
               {characterName(sheet)}. Le joueur pourra consulter cette décision.
             </DialogDescription>
           </DialogHeader>
+          {consequence && <p>{consequence}</p>}
           {confirmation?.houseId && (
             <p>
               House ·{' '}

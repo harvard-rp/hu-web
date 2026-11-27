@@ -49,3 +49,5 @@ Keep character management in the authenticated account domain. Read effective ca
 ## HU-009D staff reviews
 
 Staff requests use a capability-specific cancellation scope tied to the current Auth account. A staff denial invalidates the scope before the player context is refreshed. Staff presentation shares the owner's sheet reader while retaining its own routes, queue, mutation confirmation and recovery flow. Both feature flags are required for the standard build and are disabled for the GitHub Pages build. See [STAFF_REVIEWS.md](STAFF_REVIEWS.md).
+
+See [hybrid character sheets and reopening](CHARACTER_POLICY_UI.md) for HU-009F-C and its coordinated rollout.
