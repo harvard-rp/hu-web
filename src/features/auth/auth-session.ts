@@ -30,7 +30,13 @@ export type AuthState =
         | 'initializing';
     }
   | { kind: 'problem'; problem: AuthProblem; hasSession: boolean }
-  | { kind: 'ready'; player: PlayerContext; scope: AccountScope };
+  | {
+      kind: 'ready';
+      player: PlayerContext;
+      scope: AccountScope;
+      reviewSignal?: AbortSignal;
+      reviewRefusal?: ApiError;
+    };
 
 export type AccountScope = Readonly<{ id: number; signal: AbortSignal }>;
 
@@ -39,7 +45,7 @@ type Resolution = 'read' | 'bootstrap';
 type Dependencies = {
   service: () => AuthService | Promise<AuthService>;
   api: Pick<ApiClient, 'me' | 'bootstrap'> &
-    Partial<Pick<ApiClient, 'characters'>>;
+    Partial<Pick<ApiClient, 'characters' | 'staff'>>;
   callback: OAuthCallback;
   redirectTo: string;
 };
@@ -66,6 +72,8 @@ export function createAuthController(
   let eventRevision = 0;
   let account = new AbortController();
   let scope: AccountScope = { id: 0, signal: account.signal };
+  let reviewAccess: AbortController | undefined;
+  let reviewRefusal: ApiError | undefined;
   let contextRefresh = 0;
   let retryRestore = false;
   let callback = dependencies?.callback;
@@ -75,11 +83,34 @@ export function createAuthController(
     for (const notify of listeners) notify();
   }
 
+  function publishPlayer(player: PlayerContext, fromMe: boolean) {
+    if (
+      fromMe &&
+      player.capabilities.includes('characters.review') &&
+      !reviewRefusal
+    ) {
+      reviewAccess ??= new AbortController();
+    } else {
+      reviewAccess?.abort();
+      reviewAccess = undefined;
+    }
+    update({
+      kind: 'ready',
+      player,
+      scope,
+      reviewSignal: reviewAccess?.signal,
+      reviewRefusal,
+    });
+  }
+
   function problem(value: AuthProblem) {
     update({ kind: 'problem', problem: value, hasSession: session !== null });
   }
 
   function discardAccount() {
+    reviewAccess?.abort();
+    reviewAccess = undefined;
+    reviewRefusal = undefined;
     account.abort();
     account = new AbortController();
     scope = { id: eventRevision, signal: account.signal };
@@ -128,6 +159,7 @@ export function createAuthController(
 
     try {
       let result;
+      let fromMe = method === 'read';
       try {
         result = await (
           method === 'bootstrap'
@@ -143,6 +175,7 @@ export function createAuthController(
         )
           throw error;
         resolution = 'bootstrap';
+        fromMe = false;
         update({ kind: 'initializing' });
         result = await dependencies.api.bootstrap(
           next.accessToken,
@@ -151,7 +184,9 @@ export function createAuthController(
       }
       if (!request.signal.aborted) {
         resolution = 'read';
-        update({ kind: 'ready', player: result.data, scope });
+        publishPlayer(result.data, fromMe);
+        if (!fromMe && result.data.capabilities.includes('characters.review'))
+          void refreshPlayer(scope);
       }
     } catch (error) {
       if (request.signal.aborted) return;
@@ -281,6 +316,22 @@ export function createAuthController(
     }
   }
 
+  async function refreshPlayer(owner: AccountScope) {
+    if (!dependencies) return;
+    const refresh = ++contextRefresh;
+    try {
+      const result = await authenticated(owner, dependencies.api.me);
+      if (
+        owner === scope &&
+        refresh === contextRefresh &&
+        state.kind === 'ready'
+      )
+        publishPlayer(result.data, true);
+    } catch {
+      // A secondary read cannot undo a confirmed write or restore revoked access.
+    }
+  }
+
   return {
     getSnapshot: () => state,
     subscribe(listener: () => void) {
@@ -330,22 +381,42 @@ export function createAuthController(
         caller,
       );
     },
-    async refreshPlayer(owner: AccountScope) {
-      if (!dependencies) return;
-      const refresh = ++contextRefresh;
+    async staffRequest<T>(
+      owner: AccountScope,
+      grant: AbortSignal,
+      operation: (
+        api: Pick<ApiClient, 'staff' | 'characters'>,
+        token: string,
+        signal: AbortSignal,
+      ) => Promise<T>,
+      caller: AbortSignal,
+    ) {
+      if (grant !== reviewAccess?.signal || grant.aborted)
+        throw new ApiError('aborted');
+      const { staff, characters } = dependencies?.api ?? {};
+      if (!staff || !characters) throw new ApiError('unavailable');
       try {
-        const result = await authenticated(owner, dependencies.api.me);
+        return await authenticated(
+          owner,
+          (token, signal) => operation({ staff, characters }, token, signal),
+          AbortSignal.any([caller, grant]),
+        );
+      } catch (error) {
         if (
+          error instanceof ApiError &&
+          error.status === 403 &&
           owner === scope &&
-          refresh === contextRefresh &&
+          grant === reviewAccess?.signal &&
           state.kind === 'ready'
         ) {
-          update({ kind: 'ready', player: result.data, scope });
+          reviewRefusal = error;
+          publishPlayer(state.player, false);
+          void refreshPlayer(owner);
         }
-      } catch {
-        // Confirmed character writes remain successful if context refresh fails.
+        throw error;
       }
     },
+    refreshPlayer,
     signOut: () => signOut(),
   };
 }

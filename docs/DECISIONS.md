@@ -45,3 +45,7 @@ The normal build requires validated public Auth and API configuration. Keep Auth
 ## HU-009C · Player-owned lifecycle
 
 Keep character management in the authenticated account domain. Read effective capacity and ownership through the versioned API. Send field differences and the opened revision, render only confirmed writes and preserve local values during conflicts. Use the browser router's navigation guard when the feature is enabled. Leave the flag off for production builds until the backend rollout is approved. The public Pages demo forces the flag off.
+
+## HU-009D staff reviews
+
+Staff requests use a capability-specific cancellation scope tied to the current Auth account. A staff denial invalidates the scope before the player context is refreshed. Staff presentation shares the owner's sheet reader while retaining its own routes, queue, mutation confirmation and recovery flow. Both feature flags are required for the standard build and are disabled for the GitHub Pages build. See [STAFF_REVIEWS.md](STAFF_REVIEWS.md).

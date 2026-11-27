@@ -20,8 +20,15 @@ const auth = await prepareBrowserAuth(
 );
 
 declare const __HU_CHARACTER_LIFECYCLE__: boolean;
+declare const __HU_STAFF_REVIEWS__: boolean;
 const charactersEnabled = !hashRouting && __HU_CHARACTER_LIFECYCLE__;
-const app = <App auth={auth} charactersEnabled={charactersEnabled} />;
+const app = (
+  <App
+    auth={auth}
+    charactersEnabled={charactersEnabled}
+    staffReviewsEnabled={charactersEnabled && __HU_STAFF_REVIEWS__}
+  />
+);
 const characterRouter = charactersEnabled
   ? createBrowserRouter([{ path: '*', element: app }])
   : undefined;

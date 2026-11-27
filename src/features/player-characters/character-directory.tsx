@@ -26,9 +26,11 @@ const accountBack = { to: '/account', label: 'Retour à mes personnages' };
 export function CharacterDirectory({
   session,
   player,
+  showStaff,
 }: {
   session: PlayerSession;
   player: PlayerContext;
+  showStaff?: boolean;
 }) {
   const { controller, scope } = session;
   const load = useCallback(
@@ -50,7 +52,14 @@ export function CharacterDirectory({
 
   return (
     <Screen title="Mes personnages">
-      <p className="player-muted">Session ouverte.</p>
+      <div className="player-section-bar">
+        <p className="player-muted">Session ouverte.</p>
+        {showStaff && (
+          <Button asChild variant="outline">
+            <Link to="/account/staff">File de validation</Link>
+          </Button>
+        )}
+      </div>
       {state.kind === 'loading' && (
         <p role="status">Chargement de vos personnages…</p>
       )}
