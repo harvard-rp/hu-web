@@ -394,7 +394,17 @@ describe('Player character routes', () => {
               firstName: 'Prénom distant',
               revision: nextRevision,
             })
-          : undefined,
+          : call.path === apiDetail + '/reviews' &&
+              calls.some(({ method }) => method === 'PATCH')
+            ? Response.json([
+                {
+                  decision: 'changes_requested',
+                  reviewedAt: timestamp,
+                  comment: 'Préciser le projet universitaire.',
+                  assignedHouseId: null,
+                },
+              ])
+            : undefined,
     );
     const firstName = await screen.findByLabelText('Prénom');
     await user.clear(firstName);
@@ -421,6 +431,7 @@ describe('Player character routes', () => {
       }),
     );
     expect(firstName).toHaveValue('Prénom distant');
+    expect(screen.getByText('Préciser le projet universitaire.')).toBeVisible();
   });
 
   it('warns before leaving an edited sheet', async () => {
