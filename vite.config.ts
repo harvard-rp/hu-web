@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   envPrefix: 'VITE_API_',
   define: {
+    __HU_CHARACTER_LIFECYCLE__: JSON.stringify(
+      mode !== 'github-pages' &&
+        loadEnv(mode, process.cwd(), 'VITE_CHARACTER_')
+          .VITE_CHARACTER_LIFECYCLE_ENABLED === 'true',
+    ),
     __HU_SUPABASE_CONFIG__: JSON.stringify(
       readSupabaseConfig(
         loadEnv(mode, process.cwd(), 'VITE_SUPABASE_'),

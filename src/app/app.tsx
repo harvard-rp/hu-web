@@ -16,6 +16,9 @@ import {
 } from '@/routes/personal-space-page';
 import { NotFoundPage } from '@/routes/not-found-page';
 
+const PlayerCharacterRoutes = lazy(
+  () => import('@/features/player-characters/player-character-routes'),
+);
 const CampusRoutes = lazy(() => import('./campus-routes'));
 
 const titles = new Map([
@@ -36,6 +39,11 @@ function RouteEffects() {
   useEffect(() => {
     const route = pathname.replace(/\/+$/, '').toLowerCase() || '/';
     let title = titles.get(route) ?? 'Page introuvable';
+    if (/^\/account\/characters\/[^/]+$/.test(route))
+      title = 'Fiche de personnage';
+    if (/^\/account\/characters\/[^/]+\/edit$/.test(route))
+      title = 'Modifier la fiche';
+    if (route === '/account/characters/new') title = 'Créer un personnage';
     if (route.startsWith('/preview/houses/')) title = 'House';
     if (route.startsWith('/preview/people/')) title = 'Profil';
     document.title = `${title} | Harvard University RP`;
@@ -56,7 +64,13 @@ function RouteEffects() {
   return null;
 }
 
-export function App({ auth = noAuth }: { auth?: AuthController }) {
+export function App({
+  auth = noAuth,
+  charactersEnabled = false,
+}: {
+  auth?: AuthController;
+  charactersEnabled?: boolean;
+}) {
   const authEnabled = !['disabled', 'invalid-config'].includes(
     auth.getSnapshot().kind,
   );
@@ -87,8 +101,14 @@ export function App({ auth = noAuth }: { auth?: AuthController }) {
                 element={<AuthCallbackPage controller={auth} />}
               />
               <Route
-                path="account"
-                element={<PersonalSpacePage controller={auth} />}
+                path={charactersEnabled ? 'account/*' : 'account'}
+                element={
+                  charactersEnabled ? (
+                    <PlayerCharacterRoutes controller={auth} />
+                  ) : (
+                    <PersonalSpacePage controller={auth} />
+                  )
+                }
               />
             </Route>
             <Route path="preview/*" element={<CampusRoutes />} />

@@ -42,4 +42,6 @@ The standard build can be configured for Discord sign-in through Supabase Auth a
 
 Read [authentication](docs/AUTHENTICATION.md) for setup, callback URLs, session behavior and the local integration procedure. Never place OAuth or administrative secrets in Vite environment variables.
 
+The [player character workflow](docs/PLAYER_CHARACTERS.md) documents the authenticated routes, API integration and opt-in build flag.
+
 See [architecture](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [visual and catalogue sources](docs/DEMO_SOURCES.md), [decisions](docs/DECISIONS.md) and [roadmap](docs/ROADMAP.md).

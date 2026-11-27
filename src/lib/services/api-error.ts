@@ -1,3 +1,18 @@
+export const apiErrorCodes = [
+  'PLAYER_LINK_REQUIRED',
+  'INVALID_CHARACTER_REQUEST',
+  'UNAUTHENTICATED',
+  'CHARACTER_NOT_FOUND',
+  'CHARACTER_CAPACITY_REACHED',
+  'CHARACTER_LOCKED',
+  'CHARACTER_REVISION_CONFLICT',
+  'CHARACTER_REQUEST_TOO_LARGE',
+  'INVALID_CHARACTER_PROGRAM',
+  'CHARACTER_INCOMPLETE',
+  'SERVICE_UNAVAILABLE',
+  'INTERNAL_ERROR',
+] as const;
+
 const messages = {
   unavailable: 'The API connection is unavailable.',
   timeout: 'The API took too long to respond.',
@@ -12,7 +27,7 @@ export class ApiError extends Error {
     readonly kind: keyof typeof messages,
     readonly status?: number,
     readonly requestId?: string,
-    readonly code?: 'PLAYER_LINK_REQUIRED',
+    readonly code?: (typeof apiErrorCodes)[number],
   ) {
     super(messages[kind]);
     this.name = 'ApiError';

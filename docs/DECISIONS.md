@@ -41,3 +41,7 @@ Derive active profiles, display permissions, ranking, and capacity from tab-loca
 Use Supabase JS 2.119.2 with SDK-managed PKCE, session lifecycle and a browser storage adapter that removes Discord provider tokens. Scrub callback parameters before router initialization. Use the validated API context as the only source of character statuses and player capabilities.
 
 The normal build requires validated public Auth and API configuration. Keep Auth disabled for the public GitHub Pages build. Preserve the independent in-memory demo. See [Authentication](AUTHENTICATION.md) for the environment contract and activation steps.
+
+## HU-009C · Player-owned lifecycle
+
+Keep character management in the authenticated account domain. Read effective capacity and ownership through the versioned API. Send field differences and the opened revision, render only confirmed writes and preserve local values during conflicts. Use the browser router's navigation guard when the feature is enabled. Leave the flag off for production builds until the backend rollout is approved. The public Pages demo forces the flag off.

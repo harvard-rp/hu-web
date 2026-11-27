@@ -23,4 +23,6 @@ Course and club fields are presented for student fiches in the demo. A student r
 
 The separate authenticated space uses the browser Supabase Auth adapter and the HTTP client for player bootstrap and context. The Auth controller initializes on the sign-in, callback and personal-space routes. It exposes state without credentials and discards stale account responses. The demo store receives no session, calls no production transport, and continues to display standalone status. Theme persistence uses its own browser storage key. See [Authentication](AUTHENTICATION.md) for callback handling and trust boundaries.
 
+The gated account domain adds owned character routes and loads them on demand. It holds sheet values in component state, uses a session-scoped abort signal for authenticated requests and preserves user changes on revision conflicts. The enabled standard build uses a browser data router for SPA navigation blocking. The default build and static demo preserve their existing routing behavior. See [Player characters](PLAYER_CHARACTERS.md).
+
 Cloudflare Pages' [SPA fallback](https://developers.cloudflare.com/pages/configuration/serving-pages/#single-page-application-spa-rendering) covers direct normal paths. GitHub Pages receives the project root path for a direct hash URL and serves `index.html` there. The application catch-all handles unknown routes.

@@ -1,6 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, HashRouter } from 'react-router';
+import {
+  BrowserRouter,
+  HashRouter,
+  RouterProvider,
+  createBrowserRouter,
+} from 'react-router';
 
 import { App } from '@/app/app';
 import { prepareBrowserAuth } from '@/features/auth/bootstrap';
@@ -14,10 +19,19 @@ const auth = await prepareBrowserAuth(
   import.meta.env.BASE_URL,
 );
 
+declare const __HU_CHARACTER_LIFECYCLE__: boolean;
+const charactersEnabled = !hashRouting && __HU_CHARACTER_LIFECYCLE__;
+const app = <App auth={auth} charactersEnabled={charactersEnabled} />;
+const characterRouter = charactersEnabled
+  ? createBrowserRouter([{ path: '*', element: app }])
+  : undefined;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Router>
-      <App auth={auth} />
-    </Router>
+    {characterRouter ? (
+      <RouterProvider router={characterRouter} />
+    ) : (
+      <Router>{app}</Router>
+    )}
   </StrictMode>,
 );
