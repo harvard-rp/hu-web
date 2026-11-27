@@ -5,10 +5,15 @@ import { PublicLayout } from '@/components/layout/public-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { campusDestinations } from '@/features/campus/campus-navigation';
+import { noAuth, type AuthController } from '@/features/auth/auth-session';
 import { DemoProvider } from '@/features/demo/demo-state';
 import { ThemeProvider } from '@/features/theme/theme-provider';
 import { HomePage } from '@/routes/home-page';
 import { LoginPage } from '@/routes/login-page';
+import {
+  AuthCallbackPage,
+  PersonalSpacePage,
+} from '@/routes/personal-space-page';
 import { NotFoundPage } from '@/routes/not-found-page';
 
 const CampusRoutes = lazy(() => import('./campus-routes'));
@@ -16,6 +21,8 @@ const CampusRoutes = lazy(() => import('./campus-routes'));
 const titles = new Map([
   ['/', 'Accueil'],
   ['/login', 'Connexion'],
+  ['/auth/callback', 'Connexion à Discord'],
+  ['/account', 'Espace personnel'],
   ...campusDestinations.map(({ path, label }): [string, string] => [
     path,
     label,
@@ -49,7 +56,10 @@ function RouteEffects() {
   return null;
 }
 
-export function App() {
+export function App({ auth = noAuth }: { auth?: AuthController }) {
+  const authEnabled = !['disabled', 'invalid-config'].includes(
+    auth.getSnapshot().kind,
+  );
   return (
     <ThemeProvider>
       <DemoProvider>
@@ -68,14 +78,24 @@ export function App() {
           <Routes>
             <Route element={<PublicLayout />}>
               <Route index element={<HomePage />} />
-              <Route path="login" element={<LoginPage />} />
               <Route path="*" element={<NotFoundPage />} />
+            </Route>
+            <Route element={<PublicLayout showDemoIndicator={!authEnabled} />}>
+              <Route path="login" element={<LoginPage controller={auth} />} />
+              <Route
+                path="auth/callback"
+                element={<AuthCallbackPage controller={auth} />}
+              />
+              <Route
+                path="account"
+                element={<PersonalSpacePage controller={auth} />}
+              />
             </Route>
             <Route path="preview/*" element={<CampusRoutes />} />
           </Routes>
         </Suspense>
-        <Toaster />
       </DemoProvider>
+      <Toaster />
     </ThemeProvider>
   );
 }

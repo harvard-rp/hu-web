@@ -5,7 +5,11 @@ import { Brand } from '@/components/common/brand';
 import { Disclaimer } from '@/components/common/disclaimer';
 import { ThemeSwitcher } from '@/features/theme/theme-switcher';
 
-export function PublicLayout() {
+export function PublicLayout({
+  showDemoIndicator = true,
+}: {
+  showDemoIndicator?: boolean;
+}) {
   return (
     <div className="public-layout">
       <SkipLink />
@@ -13,7 +17,9 @@ export function PublicLayout() {
         <div className="content-shell public-header-inner">
           <Brand />
           <div className="public-navigation">
-            <span className="demo-indicator">Mode démonstration</span>
+            {showDemoIndicator && (
+              <span className="demo-indicator">Mode démonstration</span>
+            )}
             <ThemeSwitcher />
           </div>
         </div>

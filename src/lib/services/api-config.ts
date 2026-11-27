@@ -1,11 +1,11 @@
 import { z } from 'zod';
+import { readPublicUrl } from './public-url';
 
 export type ApiConfig =
   | { kind: 'disabled' }
   | { kind: 'invalid' }
   | { kind: 'ready'; baseUrl: string; timeoutMs: number };
 
-const loopback = new Set(['localhost', '127.0.0.1', '[::1]']);
 const timeout = z.coerce.number().int().min(1).max(120_000);
 const settings = z.object({
   VITE_API_BASE_URL: z.string().trim().optional(),
@@ -19,18 +19,8 @@ export function readApiConfig(env: unknown): ApiConfig {
     result.data;
   if (!value) return { kind: 'disabled' };
 
-  const url = URL.parse(value);
-  if (
-    !url ||
-    (url.protocol !== 'https:' &&
-      !(url.protocol === 'http:' && loopback.has(url.hostname))) ||
-    url.username ||
-    url.password ||
-    value.includes('?') ||
-    value.includes('#')
-  ) {
-    return { kind: 'invalid' };
-  }
+  const url = readPublicUrl(value);
+  if (!url) return { kind: 'invalid' };
 
   const parsedTimeout = timeout.safeParse(duration || '5000');
   if (!parsedTimeout.success) return { kind: 'invalid' };

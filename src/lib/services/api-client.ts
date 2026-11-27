@@ -1,38 +1,37 @@
 import { z } from 'zod';
 
+import { ApiError } from './api-error';
 import type { ApiConfig } from './api-config';
+import { playerContextSchema } from './player-context';
+import { readPublicUrl } from './public-url';
+
+export { ApiError } from './api-error';
 
 const healthSchema = z.object({
   status: z.literal('ok'),
   service: z.literal('hu-api'),
 });
 
-const messages = {
-  unavailable: 'The API connection is unavailable.',
-  timeout: 'The API took too long to respond.',
-  aborted: 'The API request was cancelled.',
-  network: 'The API could not be reached.',
-  http: 'The API returned an error.',
-  response: 'The API returned an unexpected response.',
-};
-
-export class ApiError extends Error {
-  constructor(
-    readonly kind: keyof typeof messages,
-    readonly status?: number,
-    readonly requestId?: string,
-  ) {
-    super(messages[kind]);
-    this.name = 'ApiError';
-  }
-}
+const playerLinkError = z.object({
+  error: z.object({ code: z.literal('PLAYER_LINK_REQUIRED') }),
+});
 
 export function createApiClient(
   config: ApiConfig,
   transport: typeof fetch = fetch,
 ) {
-  async function health(externalSignal?: AbortSignal) {
+  async function request<Output>(
+    path: 'health' | 'api/v1/me' | 'api/v1/auth/bootstrap',
+    schema: z.ZodType<Output>,
+    externalSignal?: AbortSignal,
+    token?: string,
+  ) {
     if (config.kind !== 'ready') throw new ApiError('unavailable');
+    const base = readPublicUrl(config.baseUrl);
+    if (!base || (path !== 'health' && !token))
+      throw new ApiError('unavailable');
+    const url = new URL(path, base);
+    if (url.origin !== base.origin) throw new ApiError('unavailable');
 
     const deadline = new AbortController();
     const timer = setTimeout(() => deadline.abort(), config.timeoutMs);
@@ -43,14 +42,29 @@ export function createApiClient(
     let requestId: string | undefined;
     try {
       signal.throwIfAborted();
-      const response = await transport(new URL('health', config.baseUrl), {
-        headers: { Accept: 'application/json' },
+      const response = await transport(url, {
+        method: path === 'api/v1/auth/bootstrap' ? 'POST' : 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         credentials: 'omit',
+        ...(token && { cache: 'no-store', referrerPolicy: 'no-referrer' }),
         redirect: 'error',
         signal,
       });
       requestId = response.headers.get('X-Request-Id') || undefined;
-      if (!response.ok) throw new ApiError('http', response.status, requestId);
+      if (!response.ok) {
+        let code: ApiError['code'];
+        if (path === 'api/v1/me' && response.status === 403) {
+          const failure = (await response
+            .json()
+            .catch(() => undefined)) as unknown;
+          if (playerLinkError.safeParse(failure).success)
+            code = 'PLAYER_LINK_REQUIRED';
+        }
+        throw new ApiError('http', response.status, requestId, code);
+      }
 
       let body: unknown;
       try {
@@ -59,7 +73,7 @@ export function createApiClient(
         signal.throwIfAborted();
         throw new ApiError('response', response.status, requestId);
       }
-      const result = healthSchema.safeParse(body);
+      const result = schema.safeParse(body);
       if (!result.success)
         throw new ApiError('response', response.status, requestId);
       return { data: result.data, requestId };
@@ -75,7 +89,13 @@ export function createApiClient(
     }
   }
 
-  return { health };
+  return {
+    health: (signal?: AbortSignal) => request('health', healthSchema, signal),
+    me: (token: string, signal?: AbortSignal) =>
+      request('api/v1/me', playerContextSchema, signal, token),
+    bootstrap: (token: string, signal?: AbortSignal) =>
+      request('api/v1/auth/bootstrap', playerContextSchema, signal, token),
+  };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
