@@ -153,7 +153,7 @@ export const characterReview = z.strictObject({
   examinedRevision: z.uuid().nullable(),
   archivedCharacter: z.boolean(),
   externalEvidence: z
-    .strictObject({ url: z.string(), attested: z.literal(true) })
+    .strictObject({ url: z.string(), attested: z.boolean() })
     .nullable(),
 });
 export const characterReviews = z.array(characterReview);

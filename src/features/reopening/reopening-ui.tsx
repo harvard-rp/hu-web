@@ -199,9 +199,26 @@ export function ReopeningForm(props: FormProps) {
         const prior = actual.history.find(
           ({ requestId }) => requestId === input.requestId,
         );
-        if (prior && (!staff || prior.decision)) {
-          guard.allowExit();
-          props.finished();
+        if (prior && ('decision' in input ? prior.decision !== null : true)) {
+          const matches =
+            'decision' in input
+              ? prior.decision === input.decision &&
+                prior.justification === input.justification
+              : prior.reason === input.reason &&
+                prior.requestedRevision ===
+                  input.expectedRevision.toLowerCase();
+          if (matches) {
+            // Refresh the observed state without claiming who wrote it.
+            guard.allowExit();
+            props.finished();
+            return;
+          }
+          setError(undefined);
+          setCheckRequired(false);
+          setReloadRequired(true);
+          setNotice(
+            'L’historique contient une autre décision ou demande. Relisez le dossier.',
+          );
           return;
         }
         setError(undefined);

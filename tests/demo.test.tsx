@@ -1,23 +1,26 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
 import { App } from '@/app/app';
 
-function openRoute(path: string) {
+async function openRoute(path: string) {
   const user = userEvent.setup();
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  );
+  await act(async () => {
+    await import('@/app/campus-routes');
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>,
+    );
+  });
   return user;
 }
 
 describe('Campus catalogues', () => {
   it('shows the twelve Houses and follows a detail and fictional character link', async () => {
-    const user = openRoute('/preview/houses');
+    const user = await openRoute('/preview/houses');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Houses' }),
     ).toBeVisible();
@@ -42,7 +45,7 @@ describe('Campus catalogues', () => {
   });
 
   it('filters clubs by category and query, with one swimming entry and the BDE cap', async () => {
-    const user = openRoute('/preview/clubs');
+    const user = await openRoute('/preview/clubs');
     await screen.findByRole('heading', { name: 'Clubs' });
     const search = screen.getByRole('searchbox', {
       name: 'Rechercher un club',
@@ -74,7 +77,7 @@ describe('Campus catalogues', () => {
   });
 
   it('lists the fifteen initial majors and lets the user propose one in a student dossier', async () => {
-    const user = openRoute('/preview/majors');
+    const user = await openRoute('/preview/majors');
     await screen.findByRole('heading', { name: 'Filières' });
     expect(
       within(screen.getByRole('main')).getAllByRole('listitem'),
@@ -96,7 +99,7 @@ describe('Campus catalogues', () => {
   });
 
   it('filters the directory by House and orders sample rankings by their stored points', async () => {
-    const user = openRoute('/preview/directory');
+    const user = await openRoute('/preview/directory');
     await screen.findByRole('heading', { name: 'Membres' });
     await user.selectOptions(screen.getByLabelText('House'), 'adams');
     expect(screen.getByText('2 personnages')).toBeVisible();
@@ -124,7 +127,7 @@ describe('Campus catalogues', () => {
 
 describe('Fictional interactions', () => {
   it('submits an original dossier, assigns a House as staff, then resets the changes', async () => {
-    const user = openRoute('/preview/character/new');
+    const user = await openRoute('/preview/character/new');
     const name = await screen.findByLabelText(
       'Nom du personnage (obligatoire)',
     );
@@ -179,7 +182,7 @@ describe('Fictional interactions', () => {
   });
 
   it('requests a correction and rejects a non-student dossier without exposing House selection', async () => {
-    const user = openRoute('/preview/staff');
+    const user = await openRoute('/preview/staff');
     await user.click(
       await screen.findByRole('button', {
         name: 'Consulter la fiche · Alma Verdier',
@@ -210,7 +213,7 @@ describe('Fictional interactions', () => {
   it('publishes, reacts and comments locally without making requests', async () => {
     const transport = vi.fn();
     vi.stubGlobal('fetch', transport);
-    const user = openRoute('/preview/social');
+    const user = await openRoute('/preview/social');
     await user.type(
       await screen.findByLabelText('Publication RP'),
       'Un chapitre fictif au Quad.',
@@ -239,7 +242,7 @@ describe('Fictional interactions', () => {
   });
 
   it('filters the agenda to local registrations', async () => {
-    const user = openRoute('/preview/agenda');
+    const user = await openRoute('/preview/agenda');
     await user.click(
       await screen.findByRole('button', {
         name: 'S’inscrire · Veillée de lecture',

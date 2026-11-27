@@ -35,10 +35,13 @@ export function ReviewHistory({
               )}
               {review.externalEvidence && (
                 <p>
-                  Consultation attestée ·{' '}
+                  {review.externalEvidence.attested
+                    ? 'Consultation attestée'
+                    : 'Référence externe sans consultation attestée'}
+                  {' · '}
                   <ExternalSheetLink
                     url={review.externalEvidence.url}
-                    label="Ouvrir le document examiné"
+                    label="Ouvrir le document référencé"
                   />
                 </p>
               )}
