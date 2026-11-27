@@ -11,7 +11,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the Vite URL, normally `http://localhost:5173`. The prototype lives under `/preview`. It includes student and staff views, university catalogues, character creation, a directory, ranking, social feed, relationships and an agenda. Sign-in information is available at `/login`.
+Open the Vite URL, normally `http://localhost:5173`. The prototype lives under `/preview`. It includes student and staff views, university catalogues, character creation, a directory, ranking, social feed, relationships and an agenda. The sign-in screen is available at `/login`.
 
 Open **Mes personnages** to switch to a validated character, check the five base slots and boost bonuses, or track a fiche. **Espace staff** is a separate HRP simulation for reviewing fiches, assigning Houses to students and changing the confirmed boost count. The campus ranking is student-only.
 
@@ -36,8 +36,10 @@ The temporary GitHub Pages build uses hash routing. To preview it, run `pnpm bui
 
 After the architect approves the pull request, enable **GitHub Actions** as the source in the repository's **Settings → Pages**. The Pages workflow builds and checks both build modes and publishes the Pages artifact on pushes to `main`. It can also be run manually from `main`. Confirm the deployment and the shared URLs in the Actions run before distributing them to staff.
 
-## API foundation
+## Authentication and API
 
-The HTTP client introduced in HU-006 remains available for later integration. Its optional public build settings are documented in `.env.example`. The public demo uses the standalone state and keeps all interactions independent of network configuration. Never put credentials into Vite environment variables.
+The standard build can be configured for Discord sign-in through Supabase Auth and a minimal player space at `/account`. It requires a Supabase origin, a publishable key, and a compatible API with player bootstrap and context endpoints. With the example environment defaults, sign-in is unavailable and the demo works without a backend. The public GitHub Pages build always disables Auth.
+
+Read [authentication](docs/AUTHENTICATION.md) for setup, callback URLs, session behavior and the local integration procedure. Never place OAuth or administrative secrets in Vite environment variables.
 
 See [architecture](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [visual and catalogue sources](docs/DEMO_SOURCES.md), [decisions](docs/DECISIONS.md) and [roadmap](docs/ROADMAP.md).

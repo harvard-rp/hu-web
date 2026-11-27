@@ -35,3 +35,9 @@ Use licensed local photography with attribution and original House monograms. Pr
 Use the RP summaries, majors and confirmed club roster from the owner-provided brief. Preserve unresolved club entries and leadership labels, original House monograms, and the original worksheet credit in the [source register](DEMO_SOURCES.md).
 
 Derive active profiles, display permissions, ranking, and capacity from tab-local records. Keep staff simulation independent of character type, and require staff House assignment before student validation. Let the account show and correct filings before activation. Treat slot accounting, access to read-only catalogues and student-only academic fields as demonstration choices while production rules are defined. Reputation categories remain descriptive and carry no scoring formula.
+
+## HU-007B · Browser PKCE and isolated account
+
+Use Supabase JS 2.119.2 with SDK-managed PKCE, session lifecycle and a browser storage adapter that removes Discord provider tokens. Scrub callback parameters before router initialization. Use the validated API context as the only source of character statuses and player capabilities.
+
+The normal build requires validated public Auth and API configuration. Keep Auth disabled for the public GitHub Pages build. Preserve the independent in-memory demo. See [Authentication](AUTHENTICATION.md) for the environment contract and activation steps.

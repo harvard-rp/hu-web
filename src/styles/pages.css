@@ -641,3 +641,60 @@
     font-size: clamp(2.8rem, 13vw, 3.65rem);
   }
 }
+
+.auth-actions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.auth-actions button {
+  width: auto;
+}
+
+.login-content button.text-link {
+  width: auto;
+}
+
+.login-content [role='alert'] {
+  color: var(--destructive);
+}
+
+.auth-characters {
+  display: grid;
+  width: 100%;
+  gap: 0.4rem;
+  border-block: 1px solid var(--border);
+  padding-block: 0.75rem;
+}
+
+.auth-characters :is(h2, h3, dd) {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.auth-characters ol {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-characters li {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.65rem;
+  background: var(--elevated);
+}
+
+.auth-characters dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.2rem), 1fr));
+  gap: 0.25rem 0.55rem;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.auth-characters dt {
+  color: var(--muted-foreground);
+}
