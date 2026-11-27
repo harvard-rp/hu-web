@@ -226,6 +226,7 @@ function SheetEditor({
   session,
 }: SheetProps) {
   const [sheet, setSheet] = useState(initial);
+  const [history, setHistory] = useState(reviews);
   const [values, setValues] = useState(() => sheetValues(initial));
   const [invalid, setInvalid] = useState<Field[]>([]);
   const [formError, setFormError] = useState('');
@@ -248,8 +249,13 @@ function SheetEditor({
     (signal: AbortSignal) =>
       controller.characterRequest(
         scope,
-        async (api, token, signal) =>
-          (await api.detail(token, signal, sheet.id)).data,
+        async (api, token, signal) => {
+          const [detail, history] = await Promise.all([
+            api.detail(token, signal, sheet.id),
+            api.reviews(token, signal, sheet.id),
+          ]);
+          return { sheet: detail.data, reviews: history.data };
+        },
         signal,
       ),
     [controller, scope, sheet.id],
@@ -309,9 +315,13 @@ function SheetEditor({
     );
   }
 
-  function adopt(remote: CharacterDetail) {
-    setSheet(remote);
-    setValues(sheetValues(remote));
+  function adopt(remote: {
+    sheet: CharacterDetail;
+    reviews: CharacterReviews;
+  }) {
+    setSheet(remote.sheet);
+    setValues(sheetValues(remote.sheet));
+    setHistory(remote.reviews);
     setInspect(false);
     setFormError('');
     setInvalid([]);
@@ -494,9 +504,9 @@ function SheetEditor({
             )}
             {latest.state.kind === 'ready' && (
               <>
-                <CharacterState character={latest.state.data} />
+                <CharacterState character={latest.state.data.sheet} />
                 <SheetFields
-                  sheet={latest.state.data}
+                  sheet={latest.state.data.sheet}
                   houses={houses}
                   programs={programs}
                 />
@@ -545,7 +555,7 @@ function SheetEditor({
           </div>
         </div>
       </form>
-      <ReviewHistory reviews={reviews} houses={houses} />
+      <ReviewHistory reviews={history} houses={houses} />
       <ExitDialog blocker={guard.blocker} working={mutation.pending} />
     </Screen>
   );
